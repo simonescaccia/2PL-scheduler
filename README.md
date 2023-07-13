@@ -8,9 +8,11 @@ This application is built using Spring Boot, Maven and Thymeleaf for the web par
 
 - Spring Boot initializer: https://start.spring.io/
 - Spring Boot tutorial:
+
 	- https://spring.io/guides/gs/spring-boot/
 	- https://spring.io/guides/gs/serving-web-content/
 - Thymeleaf:
+
 	- https://www.thymeleaf.org/faq.html 
 	- It replaces JSP pages: https://www.thymeleaf.org/doc/articles/thvsjsp.html
 
