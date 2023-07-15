@@ -2,7 +2,13 @@
 
 2PL scheduler for the Data Management project
 
-## Application info
+## Requirements
+	
+- Check if the schedule inserted satisfy the assumptions (no two read/write on the same object for the same transaction)
+- Insert a schedule, check if it is in the 2PL class (with/without lock anticipation, with/without shared locks)
+- Show conflict-serializability by precedence graph: Gen(2PL)=> DT(S) conflict serializable <=> P(S) is acyclic
+
+## Application setup
 
 This application is built using Spring Boot, Maven and Thymeleaf for the web part.
 
