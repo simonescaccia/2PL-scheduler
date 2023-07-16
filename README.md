@@ -3,9 +3,9 @@
 2PL scheduler for the Data Management project
 
 ## Requirements
-	
-- Check if the schedule inserted satisfy the assumptions (no two read/write on the same object for the same transaction)
-- Insert a schedule, check if it is in the 2PL class (with/without lock anticipation, with/without shared locks)
+
+- Check if the schedule inserted to satisfy the assumptions (no two read/write on the same object for the same transaction, no rollbacks)
+- Insert a schedule, and check if it is in the 2PL class (with/without lock anticipation, with/without shared locks)
 - Show conflict-serializability by precedence graph: Gen(2PL)=> DT(S) conflict serializable <=> P(S) is acyclic
 
 ## Application setup
@@ -31,4 +31,3 @@ You can use a docker container to run this application, using this tutorial:
 ## How to run on Eclipse
 
 You need to run the Java Spring Boot application, then using a browser you can see the local web interface at http://localhost:8080/
-

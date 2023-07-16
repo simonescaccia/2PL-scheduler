@@ -5,6 +5,20 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-    <p th:text="'Hello, ' + ${name} + '!'" />
+	<h1>2PL scheduler</h1>
+	<form action="/2pl">
+		<label>Insert the schedule S</label><br>
+		<input type="text" id="schedule" name="schedule"><br>  
+		
+		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" checked>
+  		<label for="lock_anticipation"> Lock anticipation</label><br>
+  		
+  		<input type="radio" id="xl" name="lock_type" value="xl">
+  		<label for="xl">exclusive locks</label><br>
+  		<input type="radio" id="sl" name="lock_type" value="sl">
+  		<label for="sl">exclusive and shared locks</label><br>
+
+		<input type="submit" value="Check 2PL">
+	</form>
 </body>
 </html>
