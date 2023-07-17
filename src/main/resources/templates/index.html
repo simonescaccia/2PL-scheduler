@@ -6,19 +6,24 @@
 </head>
 <body>
 	<h1>2PL scheduler</h1>
-	<form action="/2pl">
+	<form action="/">
 		<label>Insert the schedule S</label><br>
-		<input type="text" id="schedule" name="schedule"><br>  
+		<input type="text" id="schedule" name="schedule"><br><br>  
 		
 		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" checked>
-  		<label for="lock_anticipation"> Lock anticipation</label><br>
+  		<label for="lock_anticipation"> Lock anticipation</label><br><br>
   		
   		<input type="radio" id="xl" name="lock_type" value="xl">
-  		<label for="xl">exclusive locks</label><br>
-  		<input type="radio" id="sl" name="lock_type" value="sl">
-  		<label for="sl">exclusive and shared locks</label><br>
+  		<label for="xl">Exclusive locks</label><br>
+		<input type="radio" id="sl" name="lock_type" value="sl" checked>
+  		<label for="sl">Exclusive and shared locks</label><br><br>
 
 		<input type="submit" value="Check 2PL">
 	</form>
+	
+	<h2>Results</h2>
+	<p th:text="'Scheduler: ' + ${scheduler} " />
+	<p th:text="'Lock anticipation: ' + ${lock_anticipation}" />
+	<p th:text="'Lock type: ' + ${lock_type}" />
 </body>
 </html>

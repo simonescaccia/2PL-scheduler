@@ -5,7 +5,9 @@
 ## Requirements
 
 - Check if the schedule inserted to satisfy the assumptions (no two read/write on the same object for the same transaction, no rollbacks)
+- If the schedule is valid return the list of transactions with the list of operations for each transaction.
 - Insert a schedule, and check if it is in the 2PL class (with/without lock anticipation, with/without shared locks)
+- If the schedule is in the 2PL class, then return the schedule with locks and unlocks, else return a description of why it is not in the 2PL class.
 - Show conflict-serializability by precedence graph: Gen(2PL)=> DT(S) conflict serializable <=> P(S) is acyclic
 
 ## Application setup
