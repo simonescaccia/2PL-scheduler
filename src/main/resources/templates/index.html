@@ -7,8 +7,8 @@
 <body>
 	<h1>2PL scheduler</h1>
 	<form action="/">
-		<label>Insert the schedule S</label><br>
-		<input type="text" id="schedule" name="schedule"><br><br>  
+		<label>Insert the schedule</label><br>
+		<input type="text" id="schedule" name="schedule" style="width: 99%;"><br><br>  
 		
 		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" checked>
   		<label for="lock_anticipation"> Lock anticipation</label><br><br>
@@ -18,12 +18,18 @@
 		<input type="radio" id="sl" name="lock_type" value="sl" checked>
   		<label for="sl">Exclusive and shared locks</label><br><br>
 
+		<input type="hidden" id="check" name="check" value="True">
 		<input type="submit" value="Check 2PL">
 	</form>
 	
-	<h2>Results</h2>
-	<p th:text="'Scheduler: ' + ${scheduler} " />
-	<p th:text="'Lock anticipation: ' + ${lock_anticipation}" />
-	<p th:text="'Lock type: ' + ${lock_type}" />
+	<div th:if="${result == 'True'}">
+		<h2>Results</h2>
+		<div th:if="${error != ''}">
+			<p th:text="${error}" />
+		</div>
+		<div th:if="${error == ''}">
+			<p th:text="'Schedule: ' + ${schedule} " />
+		</div>
+	</div> 
 </body>
 </html>
