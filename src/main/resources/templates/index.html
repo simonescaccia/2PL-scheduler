@@ -28,7 +28,18 @@
 			<p th:text="${error}" />
 		</div>
 		<div th:if="${error == ''}">
-			<p th:text="'Schedule: ' + ${schedule} " />
+			
+			<table>
+				<tr>
+					<td th:text="'Schedule: ' + ${schedule} " />
+				</tr>
+				<tr>
+					<td>Transactions:</td>
+				</tr>
+				<tr th:each="transaction: ${transactions}">
+					<td th:text="'T' + ${transaction.key}"/>
+				</tr>
+			</table>
 		</div>
 	</div> 
 </body>
