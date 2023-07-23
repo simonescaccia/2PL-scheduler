@@ -25,7 +25,7 @@ public class ApplicationController {
 			@RequestParam(name="lock_type", required=false, defaultValue="") String lockType,
 			Model model
 	){
-		
+		logger.log(Level.INFO, "----------------------");
 		logger.log(Level.INFO, "schedule: " + schedule);
 		logger.log(Level.INFO, "lock_anticipation: " + lockAnticipation);
 		logger.log(Level.INFO, "lock_type: " + lockType);

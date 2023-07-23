@@ -8,7 +8,7 @@
 	<h1>2PL scheduler</h1>
 	<form action="/">
 		<label>Insert the schedule</label><br>
-		<input type="text" id="schedule" name="schedule" style="width: 99%;"><br><br>  
+		<input type="text" id="schedule" name="schedule" style="width: 99%;" th:value="${schedule}"><br><br>  
 		
 		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" checked>
   		<label for="lock_anticipation"> Lock anticipation</label><br><br>
@@ -28,16 +28,13 @@
 			<p th:text="${error}" />
 		</div>
 		<div th:if="${error == ''}">
-			
+			<p th:text="'Schedule: ' + ${schedule}" />
 			<table>
-				<tr>
-					<td th:text="'Schedule: ' + ${schedule} " />
-				</tr>
-				<tr>
-					<td>Transactions:</td>
-				</tr>
 				<tr th:each="transaction: ${transactions}">
-					<td th:text="'T' + ${transaction.key}"/>
+					<td th:text="'T' + ${transaction.key} + ':'"/>
+					<td th:each="operation: ${transaction.value}">
+						<span th:text="' ' + ${operation}"></span>
+					</td>
 				</tr>
 			</table>
 		</div>
