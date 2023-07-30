@@ -39,9 +39,7 @@ public class InputBean {
 			} else {
 				
 				String transactionNumber = OperationUtils.getTransactionNumber(
-						operation, 
-						isReadOrWrite, 
-						isCommit
+						operation
 						);
 				if (!this.transactions.containsKey(transactionNumber)) {
 					// add the new transaction
