@@ -41,4 +41,8 @@ public class OperationUtils {
 	public static String createOperation(String operationType, String transactionNumber, String objectName) {
 		return String.format("%s%s(%s)", operationType, transactionNumber, objectName);
 	}
+	
+	public static Boolean use(String operation, String object) {
+		return OperationUtils.getObjectName(operation).equals(object);
+	}
 }
