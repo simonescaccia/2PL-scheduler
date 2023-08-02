@@ -23,15 +23,18 @@ public class ApplicationController {
 	public String index(
 			@RequestParam(name="check", required=false, defaultValue="") String check_schedule,
 			@RequestParam(name="schedule", required=false, defaultValue="") String schedule,
-			@RequestParam(name="lock_anticipation", required=false, defaultValue="") String lockAnticipation,
-			@RequestParam(name="lock_type", required=false, defaultValue="") String lockType,
+			@RequestParam(name="lockAnticipation", required=false, defaultValue="") String lockAnticipation,
+			@RequestParam(name="lockType", required=false, defaultValue="") String lockType,
 			Model model
 	){
 		logger.log(Level.INFO, "----------------------");
 		logger.log(Level.INFO, "schedule: " + schedule);
 		logger.log(Level.INFO, "lockAnticipation: " + lockAnticipation);
 		logger.log(Level.INFO, "lockType: " + lockType);
-		model.addAttribute("rememberParameters", "True");
+		if(lockType.equals("")) {
+			// first request, default setting
+			lockAnticipation = "True";
+		}
 		model.addAttribute("lockAnticipation", lockAnticipation);
 		model.addAttribute("lockType", lockType);
 		

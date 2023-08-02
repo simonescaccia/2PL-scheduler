@@ -20,13 +20,15 @@
 		<label>Insert the schedule</label><br>
 		<input type="text" id="schedule" name="schedule" style="width: 99%;" th:value="${schedule}"><br><br>  
 		
-		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" 
-			   th:checked="${not(rememberParams == 'True' and lockAnticipation == '')}">
+		<input type="checkbox" id="lockAnticipation" name="lockAnticipation" value="True" 
+			   th:checked="${lockAnticipation != ''}">
   		<label for="lock_anticipation"> Lock anticipation</label><br><br>
   		
-  		<input type="radio" id="xl" name="lock_type" value="xl">
+  		<input type="radio" id="xl" name="lockType" value="xl"
+  			   th:checked="${lockType == 'xl'}">
   		<label for="xl">Exclusive locks</label><br>
-		<input type="radio" id="sl" name="lock_type" value="sl" checked>
+		<input type="radio" id="sl" name="lockType" value="sl" 
+			   th:checked="${lockType == '' or lockType == 'sl'}">
   		<label for="sl">Exclusive and shared locks</label><br><br>
 
 		<input type="hidden" id="check" name="check" value="True">
@@ -42,7 +44,9 @@
 			<p th:text="${error}" />
 		</div>
 		<div th:if="${error == ''}">
-			<p th:text="'Schedule: ' + ${schedule}" />
+			<span th:text="'Lock anticipation: ' + ${lockAnticipation == 'True'}"></span><br>
+			<span th:text="'Lock type: ' + (${lockType == 'sl'} ? 'shared and exclusive locks' : 'exclusive locks')"></span><br>
+			<span th:text="'Schedule: ' + ${schedule}"></span><br><br>
 			<table>
 				<tr th:each="transaction: ${transactions}">
 					<td th:text="'T' + ${transaction.key} + ':'"/>
