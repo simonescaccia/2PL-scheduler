@@ -3,14 +3,25 @@
 <head> 
     <title>2PL scheduler</title> 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+	h1 { 
+	    display: inline-block;
+	}
+	h3 { 
+	    display: inline-block;
+	    padding-left: 0.5em;
+	}
+	</style>
 </head>
 <body>
-	<h1>2PL scheduler</h1>
+	<h1>2PL scheduler</h1><h3>by <a href="https://github.com/simonescaccia">Simone Scaccia</a></h3>
 	<form action="/">
 		<label>Insert the schedule</label><br>
 		<input type="text" id="schedule" name="schedule" style="width: 99%;" th:value="${schedule}"><br><br>  
 		
-		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" checked>
+		<input type="checkbox" id="lock_anticipation" name="lock_anticipation" value="True" 
+			   th:checked="${not(rememberParams == 'True' and lockAnticipation == '')}">
   		<label for="lock_anticipation"> Lock anticipation</label><br><br>
   		
   		<input type="radio" id="xl" name="lock_type" value="xl">
@@ -23,7 +34,10 @@
 	</form>
 	
 	<div th:if="${result == 'True'}">
-		<h2>Results</h2>
+		<h2>Results
+			<i th:if="${result2PL == true}" class="fa fa-circle" aria-hidden="true"  style="font-size:1em;color:green;"></i>
+			<i th:if="${result2PL == false}" class="fa fa-circle" aria-hidden="true"  style="font-size:1em;color:red;"></i>
+		</h2>
 		<div th:if="${error != ''}">
 			<p th:text="${error}" />
 		</div>
@@ -35,6 +49,12 @@
 					<td th:each="operation: ${transaction.value}">
 						<span th:text="' ' + ${operation}"></span>
 					</td>
+				</tr>
+			</table>
+			<p th:text="'Schedule with locks: ' + ${scheduleWithLocks}" />
+			<table>
+				<tr th:each="logRow: ${log}">
+					<td th:text="${logRow}"/>
 				</tr>
 			</table>
 		</div>

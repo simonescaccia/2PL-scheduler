@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.scheduler.controller.Scheduler2PL;
 import com.example.scheduler.exception.InputBeanException;
+import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.view.InputBean;
+import com.example.scheduler.view.OutputBean;
 
 @Controller
 public class ApplicationController {
@@ -27,8 +29,11 @@ public class ApplicationController {
 	){
 		logger.log(Level.INFO, "----------------------");
 		logger.log(Level.INFO, "schedule: " + schedule);
-		logger.log(Level.INFO, "lock_anticipation: " + lockAnticipation);
-		logger.log(Level.INFO, "lock_type: " + lockType);
+		logger.log(Level.INFO, "lockAnticipation: " + lockAnticipation);
+		logger.log(Level.INFO, "lockType: " + lockType);
+		model.addAttribute("rememberParameters", "True");
+		model.addAttribute("lockAnticipation", lockAnticipation);
+		model.addAttribute("lockType", lockType);
 		
 		if (!check_schedule.equals("True") || schedule.equals("")) {
 			model.addAttribute("result", "False");
@@ -43,10 +48,14 @@ public class ApplicationController {
 				model.addAttribute("transactions", iB.getTransactions());
 				
 				Scheduler2PL s2PL = new Scheduler2PL(iB);
-				s2PL.check();			
+				OutputBean oB = s2PL.check();
 				
-			} catch (InputBeanException lTE) {
-				model.addAttribute("error", lTE.getMessage());
+				model.addAttribute("scheduleWithLocks", oB.getSchedleWithLocks());
+				model.addAttribute("log", oB.getLog());
+				model.addAttribute("result2PL", oB.getResult());
+				
+			} catch (InputBeanException | InternalErrorException e) {
+				model.addAttribute("error", e.getMessage());
 			}
 			
 			model.addAttribute("schedule", schedule);

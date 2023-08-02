@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class InputBean {
-	List<String> schedule;				// Input schedule
+	List<String> schedule;			// Input schedule
 	Boolean isLockAnticipation;		// Enable lock anticipation
 	Boolean isLockShared;			// Use both exclusive and shared locks
 	

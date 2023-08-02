@@ -35,7 +35,7 @@ public class OperationUtils {
 	}
 	
 	public static String getObjectName(String operation) {
-		return operation.substring(operation.indexOf('('), operation.indexOf(')') + 1);
+		return operation.substring(operation.indexOf('(') + 1, operation.indexOf(')'));
 	}
 	
 	public static String createOperation(String operationType, String transactionNumber, String objectName) {
