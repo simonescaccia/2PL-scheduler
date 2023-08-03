@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.TransactionBlockedException;
@@ -82,12 +83,29 @@ public class Scheduler2PL {
 				continue;
 			}
 			this.execute(operation);
+			
+			// resume blocked transaction if possible (only when lock anticipation is not used)
+			if(!this.isLockAnticipation) {
+				this.resume();
+			}
 		}
 		this.unlockAllObjects();
 		
 		// return the schedule and the log
 		OutputBean outputBean = new OutputBean(this.scheduleWithLocks, this.log, this.result);
 		return outputBean;
+	}
+
+	/**
+	 * Try to resume blocked transactions
+	 */
+	private void resume() {
+		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
+		for(String blockedTransaction: adjacencyList.keySet()) {
+			// try to unlock blocked transaction
+			String object = adjacencyList.get(blockedTransaction).getKey();
+			String waitForTransaction = adjacencyList.get(blockedTransaction).getValue();
+		}
 	}
 
 	private void unlockAllObjects() throws InternalErrorException {
