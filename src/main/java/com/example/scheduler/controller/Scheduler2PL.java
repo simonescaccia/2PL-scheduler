@@ -59,7 +59,7 @@ public class Scheduler2PL {
 		// Initialize the counter and the shrinking phase for each transaction
 		this.countOperations = new HashMap<String, Integer>();
 		this.isShrinkingPhase = new HashMap<String, Boolean>();
-		for(String transaction: transactions.keySet()) {
+		for(String transaction: this.transactions.keySet()) {
 			this.countOperations.put(transaction, 0);
 			this.isShrinkingPhase.put(transaction, false);
 		}
@@ -73,8 +73,19 @@ public class Scheduler2PL {
 	
 	public OutputBean check() throws InternalErrorException {
 		
-		for(String operation: this.schedule) {
-			this.incrementCountOperation(operation);
+		this.executeSchedule(this.schedule);
+		this.unlockAllObjects();
+		
+		// return the schedule and the log
+		OutputBean outputBean = new OutputBean(this.scheduleWithLocks, this.log, this.result);
+		return outputBean;
+	}
+
+	/**
+	 * @param schedule: the list of operations to execute
+	 */
+	private void executeSchedule(List<String> schedule) {
+		for(String operation: schedule) {
 			// execute operation			
 			try {
 				this.lock(operation);
@@ -83,19 +94,15 @@ public class Scheduler2PL {
 				continue;
 			}
 			this.execute(operation);
+			this.incrementExecutedOperation(operation);
 			
 			// resume blocked transaction if possible (only when lock anticipation is not used)
 			if(!this.isLockAnticipation) {
 				this.resume();
 			}
 		}
-		this.unlockAllObjects();
-		
-		// return the schedule and the log
-		OutputBean outputBean = new OutputBean(this.scheduleWithLocks, this.log, this.result);
-		return outputBean;
 	}
-
+	
 	/**
 	 * Try to resume blocked transactions
 	 */
@@ -105,6 +112,17 @@ public class Scheduler2PL {
 			// try to unlock blocked transaction
 			String object = adjacencyList.get(blockedTransaction).getKey();
 			String waitForTransaction = adjacencyList.get(blockedTransaction).getValue();
+			System.out.println(String.format("---%s %s", object, waitForTransaction));
+			try {
+				this.unlock(waitForTransaction, object);
+				// unlock done, then execute the blocked transaction
+				this.executeSchedule(this.blockedOperations.get(blockedTransaction));
+				// after resuming the first transaction the adjacencyList may changes, then we continue to resume transaction recursively  
+				break;
+			} catch (TransactionBlockedException e) {
+				// the transaction can't be resumed
+				continue;
+			}
 		}
 	}
 
@@ -127,7 +145,7 @@ public class Scheduler2PL {
 		}
 	}
 
-	private void incrementCountOperation(String operation) {
+	private void incrementExecutedOperation(String operation) {
 		String transaction = OperationUtils.getTransactionNumber(operation);
 		this.countOperations.put(transaction, this.countOperations.get(transaction) + 1);
 	}
@@ -213,6 +231,7 @@ public class Scheduler2PL {
 	 */
 	private void unlock(String transactionLock, String objectName) throws TransactionBlockedException {
 		List<String> operations = this.transactions.get(transactionLock);
+		System.out.printf("---%s\n", operations);
 		Integer executedOperations = this.countOperations.get(transactionLock);
 		Integer operationsListLenght = operations.size(); 
 		List<String> remainingOperations = operations.subList(executedOperations, operationsListLenght);
