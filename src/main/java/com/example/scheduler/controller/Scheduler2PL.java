@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.TransactionBlockedException;
@@ -13,6 +15,9 @@ import com.example.scheduler.view.InputBean;
 import com.example.scheduler.view.OutputBean;
 
 public class Scheduler2PL {
+	// Debug
+	Logger logger = Logger.getLogger(Scheduler2PL.class.getName());
+	
 	// View
 	List<String> schedule;			// Input schedule
 	Boolean isLockAnticipation;		// Enable lock anticipation
@@ -86,11 +91,14 @@ public class Scheduler2PL {
 	 */
 	private void executeSchedule(List<String> schedule) {
 		for(String operation: schedule) {
+			logger.log(Level.INFO, String.format("Trying to execute %s", operation));
 			// execute operation			
 			try {
 				this.lock(operation);
+				logger.log(Level.INFO, "Lock completed");
 			} catch (TransactionBlockedException e) {
 				// if an operation is blocked we can't execute them
+				logger.log(Level.INFO, "Unable to lock, transaction blocked");
 				continue;
 			}
 			this.execute(operation);
@@ -110,13 +118,21 @@ public class Scheduler2PL {
 		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
 		for(String blockedTransaction: adjacencyList.keySet()) {
 			// try to unlock blocked transaction
-			String object = adjacencyList.get(blockedTransaction).getKey();
-			String waitForTransaction = adjacencyList.get(blockedTransaction).getValue();
-			System.out.println(String.format("---%s %s", object, waitForTransaction));
+			String waitForTransaction = adjacencyList.get(blockedTransaction).getKey();
+			String object = adjacencyList.get(blockedTransaction).getValue();
 			try {
 				this.unlock(waitForTransaction, object);
-				// unlock done, then execute the blocked transaction
-				this.executeSchedule(this.blockedOperations.get(blockedTransaction));
+				logger.log(Level.INFO, String.format("Resuming blocked transaction %s", blockedTransaction));
+				// remove the blocked transaction to the waitForGraph
+				this.waitForGraph.removeEdge(blockedTransaction);
+				this.log.add(String.format(
+						"Transaction %s resumed, object %s unlocked by transaction %s", 
+						blockedTransaction, object, waitForTransaction
+						));
+				// unlock done, then remove the transaction form blocked transactions and execute it
+				List<String> blockedOperations = this.blockedOperations.get(blockedTransaction);
+				this.blockedOperations.remove(blockedTransaction);
+				this.executeSchedule(blockedOperations);
 				// after resuming the first transaction the adjacencyList may changes, then we continue to resume transaction recursively  
 				break;
 			} catch (TransactionBlockedException e) {
@@ -138,6 +154,7 @@ public class Scheduler2PL {
 					try {
 						this.unlock(transactionLock, object);
 					} catch (TransactionBlockedException e) {
+						System.out.println("Here");
 						throw new InternalErrorException("Internal error during the unlocking phase");
 					}
 				}
@@ -231,7 +248,6 @@ public class Scheduler2PL {
 	 */
 	private void unlock(String transactionLock, String objectName) throws TransactionBlockedException {
 		List<String> operations = this.transactions.get(transactionLock);
-		System.out.printf("---%s\n", operations);
 		Integer executedOperations = this.countOperations.get(transactionLock);
 		Integer operationsListLenght = operations.size(); 
 		List<String> remainingOperations = operations.subList(executedOperations, operationsListLenght);
@@ -244,13 +260,13 @@ public class Scheduler2PL {
 				continue;
 			}
 			// check if remainingOperations contains operations on the object
-			if(OperationUtils.use(operation, objectName) && this.isShrinkingPhase.get(transactionLock)) {
+			if(OperationUtils.use(operation, objectName)) {
 				// we need to use the object
 				unlock = false;
 				break;
 			}
 			// check if we can start the shrinking phase if it is not already started
-			if(!this.isShrinkingPhase.get(transactionLock) ||
+			if(!this.isShrinkingPhase.get(transactionLock) &&
 			   (
 			    !OperationUtils.use(operation, objectName) && 
 				!this.lockTable.get(OperationUtils.getObjectName(operation)).get(1).equals(transactionLock)
@@ -267,7 +283,7 @@ public class Scheduler2PL {
 			this.isShrinkingPhase.put(transactionLock, true);
 		}
 		
-		if(unlock == false || !this.isShrinkingPhase.get(transactionLock)) {
+		if(!unlock || !this.isShrinkingPhase.get(transactionLock)) {
 			throw new TransactionBlockedException();
 		}	
 		
