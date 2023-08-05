@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,7 @@ public class Scheduler2PL {
 	// Internal computation
 	HashMap<String, Boolean> isShrinkingPhase;
 	HashMap<String, Integer> countOperations;
-	HashMap<String, List<String>> lockTable;
+	HashMap<String, Entry<List<String>, String>> lockTable;
 	WaitForGraph waitForGraph;
 	HashMap<String, List<String>> blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
 	
@@ -44,7 +45,7 @@ public class Scheduler2PL {
 		this.transactions = iB.getTransactions();
 		
 		// Build the lock table, one row for each object
-		HashMap<String, List<String>> lockTable = new HashMap<String, List<String>>();
+		HashMap<String, Entry<List<String>, String>> lockTable = new HashMap<String, Entry<List<String>, String>>();
 		for(String operation: schedule) {
 			if(OperationUtils.isCommit(operation)) {
 				// skip operations without objects
@@ -53,10 +54,10 @@ public class Scheduler2PL {
 			String objectName = OperationUtils.getObjectName(operation);
 			
 			if(!lockTable.containsKey(objectName)) {
-				List<String> locks = new ArrayList<String>();
-				// first column represents the transaction which gets the shared lock
-				// second column represents the transaction which gets the exclusive lock  
-				locks.addAll(Arrays.asList("",""));
+				List<String> sharedLocks = new ArrayList<String>();
+				// first column represents the transactions which get the shared lock
+				// second column represents the transaction which gets the exclusive lock
+				Entry<List<String>, String> locks = Map.entry(sharedLocks, "");
 				lockTable.put(objectName, locks);	
 			}
 		}
@@ -179,66 +180,93 @@ public class Scheduler2PL {
 	private void execute(String operation) {
 		this.scheduleWithLocks.add(operation);
 	}
-
+	
 	private void lock(String operation) throws TransactionBlockedException, DeadlockException {
-		
-		if(this.isLockAnticipation) {
-			this.lockWithLockAnticipation(operation);
-		} else {
-			this.lockWithoutLockAnticipation(operation);
-		}
-	}
-	
-	private void lockWithLockAnticipation(String operation) {
-		
-	}
-	
-	private void lockWithoutLockAnticipation(String operation) throws TransactionBlockedException, DeadlockException {
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
-		// Check lock type
-		if(this.isLockShared) {
-			// shared lock  logic
-		} else {
-			// exclusive lock logic
-			
-			// check if the transaction is blocked
-			if(this.blockedOperations.containsKey(transactionNumber)) {
-				this.blockedOperations.get(transactionNumber).add(operation);
-				throw new TransactionBlockedException();
-			}
-			
-			if(OperationUtils.isCommit(operation)) {
-				// commit doesn't need to lock objects
-				return;				
-			}
-			
-			// lock object
-			String objectName = OperationUtils.getObjectName(operation);
-			String transactionLock = this.lockTable.get(objectName).get(1);
-			if(transactionLock.equals(transactionNumber)) {
+		// check if the transaction is blocked
+		if(this.blockedOperations.containsKey(transactionNumber)) {
+			this.blockedOperations.get(transactionNumber).add(operation);
+			throw new TransactionBlockedException();
+		}
+		
+		// commits don't need to lock objects
+		if(OperationUtils.isCommit(operation)) {
+			return;				
+		}
+		
+		// lock object
+		String objectName = OperationUtils.getObjectName(operation);
+		Boolean isRead = OperationUtils.isRead(operation);
+		Integer objectState = this.getObjectState(objectName, transactionNumber, isRead);
+		switch(objectState) {
+			case 0:
 				// object already locked by the same transaction
 				return;
-			}
-			if(!transactionLock.equals("")) {
+			case 1:
+				// free object, lock
+				//TODO
+				break;
+			case 2:
 				// the object is already locked by another transaction, try to unlock
+				String transactionLock = this.lockTable.get(objectName).getValue();
 				try {
 					this.unlock(transactionLock, objectName);
 				} catch (TransactionBlockedException e) {
 					// can't unlock the object
 					this.blockTransaction(operation, transactionLock);
 				}
-			}
-			
-			// case: transactionLock.equals("") or unlock completed. Free object
-			List<String> newLocks = new ArrayList<String>(); 
-			newLocks.addAll(Arrays.asList("",transactionNumber));
-			this.lockTable.put(objectName, newLocks);		// update lockTable's exclusive lock
-			addLockToFinalSchedule(operation);				// add the write lock to the final schedule
-
+				break;
 		}
+		
+		// case: transactionLock.equals("") or unlock completed. Free object
+		List<String> newLocks = new ArrayList<String>(); 
+		newLocks.addAll(Arrays.asList("",transactionNumber));
+		this.lockTable.put(objectName, newLocks);		// update lockTable's exclusive lock
+		addLockToFinalSchedule(operation);				// add the write lock to the final schedule
+
 	}
 	
+	/**
+	 * Check if the object is already locked by the same transaction, not locked or locked by another transaction 
+	 * @param objectName
+	 * @param transactionNumber
+	 * @return 0 if the object is already locked by the same transaction, 
+	 * 1 if the object is free or 2 if the object is locked by another transaction
+	 */
+	private Integer getObjectState(String objectName, String transactionNumber, Boolean isRead) {
+		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();	// transaction who has the exclusive lock
+		List<String> sharedTransactionsLock = this.lockTable.get(objectName).getKey();	// transaction who has the exclusive lock
+		
+		if(!exclusiveTransactionLock.equals(transactionNumber) && !exclusiveTransactionLock.equals("")) {
+			// object already locked by another transaction
+			return 2;
+		}
+		if(exclusiveTransactionLock.equals(transactionNumber)) {
+			// object already locked by the same transaction
+			return 0;
+		}
+		if(exclusiveTransactionLock.equals("")) {
+			if(!this.isLockShared) {
+				// exclusive lock case: free object
+				return 1;
+			}
+			// shared lock case
+			if(!isRead) {
+				// shared lock case, write operation: free object
+				return 1;
+			}
+			// read case
+			if(sharedTransactionsLock.contains(transactionNumber)) {
+				// object already locked
+				return 0;
+			}
+			// free object
+			return 1;
+		}
+		return null;
+	}
+
 	private void blockTransaction(String operation, String transactionLock) throws TransactionBlockedException, DeadlockException {
 		String objectName = OperationUtils.getObjectName(operation);
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
