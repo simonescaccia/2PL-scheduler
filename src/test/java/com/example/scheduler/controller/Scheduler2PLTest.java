@@ -96,4 +96,14 @@ public class Scheduler2PLTest {
 		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
 	}
 	
+	@Test
+	public void checkDeadlockNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(y) w2(x) w1(y)";
+		String outputSchedule = "l1(x) w1(x) l2(y) w2(y)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
+	}
+	
 }

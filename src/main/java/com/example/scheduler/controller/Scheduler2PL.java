@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.example.scheduler.exception.DeadlockException;
 import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.TransactionBlockedException;
 import com.example.scheduler.model.WaitForGraph;
@@ -78,8 +79,12 @@ public class Scheduler2PL {
 	
 	public OutputBean check() throws InternalErrorException {
 		
-		this.executeSchedule(this.schedule);
-		this.unlockAllObjects();
+		try {
+			this.executeSchedule(this.schedule);
+			this.unlockAllObjects();
+		} catch (DeadlockException e) {
+			this.result = false;
+		}
 		
 		// return the schedule and the log
 		OutputBean outputBean = new OutputBean(this.scheduleWithLocks, this.log, this.result);
@@ -88,8 +93,9 @@ public class Scheduler2PL {
 
 	/**
 	 * @param schedule: the list of operations to execute
+	 * @throws DeadlockException 
 	 */
-	private void executeSchedule(List<String> schedule) {
+	private void executeSchedule(List<String> schedule) throws DeadlockException {
 		for(String operation: schedule) {
 			logger.log(Level.INFO, String.format("Trying to execute %s", operation));
 			// execute operation			
@@ -100,6 +106,9 @@ public class Scheduler2PL {
 				// if an operation is blocked we can't execute them
 				logger.log(Level.INFO, "Unable to lock, transaction blocked");
 				continue;
+			} catch (DeadlockException e) {
+				logger.log(Level.INFO, "Deadlock");
+				throw new DeadlockException();
 			}
 			this.execute(operation);
 			this.incrementExecutedOperation(operation);
@@ -113,8 +122,9 @@ public class Scheduler2PL {
 	
 	/**
 	 * Try to resume blocked transactions
+	 * @throws DeadlockException 
 	 */
-	private void resume() {
+	private void resume() throws DeadlockException {
 		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
 		for(String blockedTransaction: adjacencyList.keySet()) {
 			// try to unlock blocked transaction
@@ -154,7 +164,6 @@ public class Scheduler2PL {
 					try {
 						this.unlock(transactionLock, object);
 					} catch (TransactionBlockedException e) {
-						System.out.println("Here");
 						throw new InternalErrorException("Internal error during the unlocking phase");
 					}
 				}
@@ -171,7 +180,7 @@ public class Scheduler2PL {
 		this.scheduleWithLocks.add(operation);
 	}
 
-	private void lock(String operation) throws TransactionBlockedException {
+	private void lock(String operation) throws TransactionBlockedException, DeadlockException {
 		
 		if(this.isLockAnticipation) {
 			this.lockWithLockAnticipation(operation);
@@ -184,7 +193,7 @@ public class Scheduler2PL {
 		
 	}
 	
-	private void lockWithoutLockAnticipation(String operation) throws TransactionBlockedException {
+	private void lockWithoutLockAnticipation(String operation) throws TransactionBlockedException, DeadlockException {
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
 		// Check lock type
@@ -217,17 +226,7 @@ public class Scheduler2PL {
 					this.unlock(transactionLock, objectName);
 				} catch (TransactionBlockedException e) {
 					// can't unlock the object
-					this.waitForGraph.addEdge(transactionNumber, transactionLock, objectName);	// transaction is blocked
-					this.log.add(String.format(
-							"Transaction %s blocked, waiting for transaction %s on object %s", 
-							transactionNumber, transactionLock, objectName
-							));
-					
-					// operation is blocked
-					List<String> blockedOperationsList = new ArrayList<String>();
-					blockedOperationsList.add(operation);
-					this.blockedOperations.put(transactionNumber, blockedOperationsList);
-					throw new TransactionBlockedException();
+					this.blockTransaction(operation, transactionLock);
 				}
 			}
 			
@@ -240,6 +239,30 @@ public class Scheduler2PL {
 		}
 	}
 	
+	private void blockTransaction(String operation, String transactionLock) throws TransactionBlockedException, DeadlockException {
+		String objectName = OperationUtils.getObjectName(operation);
+		String transactionNumber = OperationUtils.getTransactionNumber(operation);
+
+		this.log.add(String.format(
+				"Transaction %s blocked, waiting for transaction %s on object %s", 
+				transactionNumber, transactionLock, objectName
+				));
+		
+		// operation is blocked
+		List<String> blockedOperationsList = new ArrayList<String>();
+		blockedOperationsList.add(operation);
+		this.blockedOperations.put(transactionNumber, blockedOperationsList);
+			
+		try {
+			this.waitForGraph.addEdge(transactionNumber, transactionLock, objectName); // transaction is blocked
+		} catch (DeadlockException e) {
+			this.log.add(e.getMessage());
+			throw new DeadlockException();
+		}	
+	
+		throw new TransactionBlockedException();
+	}
+
 	/**
 	 * If the transaction doesn't need anymore the lock on objectName and it has already all the locks, execute the unlock
 	 * @param transactionLock: the transaction who has the lock on objectName
