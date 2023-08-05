@@ -95,8 +95,9 @@ public class Scheduler2PL {
 	/**
 	 * @param schedule: the list of operations to execute
 	 * @throws DeadlockException 
+	 * @throws InternalErrorException 
 	 */
-	private void executeSchedule(List<String> schedule) throws DeadlockException {
+	private void executeSchedule(List<String> schedule) throws DeadlockException, InternalErrorException {
 		for(String operation: schedule) {
 			logger.log(Level.INFO, String.format("Trying to execute %s", operation));
 			// execute operation			
@@ -124,8 +125,9 @@ public class Scheduler2PL {
 	/**
 	 * Try to resume blocked transactions
 	 * @throws DeadlockException 
+	 * @throws InternalErrorException 
 	 */
-	private void resume() throws DeadlockException {
+	private void resume() throws DeadlockException, InternalErrorException {
 		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
 		for(String blockedTransaction: adjacencyList.keySet()) {
 			// try to unlock blocked transaction
@@ -156,16 +158,24 @@ public class Scheduler2PL {
 	private void unlockAllObjects() throws InternalErrorException {
 		for(String object: this.lockTable.keySet()) {
 			if(this.isLockAnticipation) {
-				 
+				 //TODO
 			} else {
-				// only exclusive locks
-				String transactionLock = this.lockTable.get(object).get(1);
-				if(!transactionLock.equals("")) {
-					// unlock
+				// unlock exclusive lock
+				String exclusiveTransactionLock = this.lockTable.get(object).getValue();
+				if(!exclusiveTransactionLock.equals("")) {
 					try {
-						this.unlock(transactionLock, object);
+						this.unlock(exclusiveTransactionLock, object);
 					} catch (TransactionBlockedException e) {
 						throw new InternalErrorException("Internal error during the unlocking phase");
+					}
+				} else {
+					// unlock shared locks
+					for(String sharedTransactionLock: this.lockTable.get(object).getKey()) {
+						try {
+							this.unlock(sharedTransactionLock, object);
+						} catch (TransactionBlockedException e) {
+							throw new InternalErrorException("Internal error during the unlocking phase");
+						}
 					}
 				}
 			}
@@ -181,7 +191,7 @@ public class Scheduler2PL {
 		this.scheduleWithLocks.add(operation);
 	}
 	
-	private void lock(String operation) throws TransactionBlockedException, DeadlockException {
+	private void lock(String operation) throws TransactionBlockedException, DeadlockException, InternalErrorException {
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
 		// check if the transaction is blocked
@@ -205,36 +215,67 @@ public class Scheduler2PL {
 				return;
 			case 1:
 				// free object, lock
-				//TODO
-				break;
+				this.updateLocks(transactionNumber, objectName, isRead, operation);
+				return;
 			case 2:
 				// the object is already locked by another transaction, try to unlock
 				String transactionLock = this.lockTable.get(objectName).getValue();
 				try {
 					this.unlock(transactionLock, objectName);
+					this.updateLocks(transactionNumber, objectName, isRead, operation);
 				} catch (TransactionBlockedException e) {
 					// can't unlock the object
 					this.blockTransaction(operation, transactionLock);
 				}
-				break;
+				return;
+			case 3:
+				// upgrade lock
+				this.upgradeLock(transactionNumber, objectName, isRead, operation);
+			default:
+				throw new InternalErrorException();
 		}
-		
-		// case: transactionLock.equals("") or unlock completed. Free object
-		List<String> newLocks = new ArrayList<String>(); 
-		newLocks.addAll(Arrays.asList("",transactionNumber));
-		this.lockTable.put(objectName, newLocks);		// update lockTable's exclusive lock
-		addLockToFinalSchedule(operation);				// add the write lock to the final schedule
-
 	}
 	
+	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) throws TransactionBlockedException, DeadlockException {
+		// remove the shared lock
+		this.lockTable.get(objectName).getKey().remove(transactionNumber);
+		// unlock all the other shared locks
+		for(String transactionWithSharedLock: this.lockTable.get(objectName).getKey()) {
+			try {
+				this.unlock(transactionWithSharedLock, objectName);
+				this.updateLocks(transactionNumber, objectName, isRead, operation);
+			} catch (TransactionBlockedException e) {
+				// can't unlock the object
+				this.blockTransaction(operation, transactionWithSharedLock);
+			}
+		}
+		// update the exclusive lock
+		this.updateLocks(transactionNumber, objectName, isRead, operation);
+	}
+
+	private void updateLocks(String transactionNumber, String objectName, Boolean isRead, String operation) {
+		if(!isRead) {
+			// write operation
+			this.lockTable.get(operation).setValue(transactionNumber);	// update lockTable's exclusive lock
+		} else {
+			// read operation
+			if(this.isLockShared) {
+				this.lockTable.get(operation).getKey().add(transactionNumber); // update lockTable's shared lock
+			} else {
+				this.lockTable.get(operation).setValue(transactionNumber);	// update lockTable's exclusive lock
+			}
+		}
+		this.addLockToFinalSchedule(operation);			// add the write lock to the final schedule
+	}
+
 	/**
 	 * Check if the object is already locked by the same transaction, not locked or locked by another transaction 
 	 * @param objectName
 	 * @param transactionNumber
 	 * @return 0 if the object is already locked by the same transaction, 
-	 * 1 if the object is free or 2 if the object is locked by another transaction
+	 * 1 if the object is free, 2 if the object is locked by another transaction, 3 for upgrading lock need
 	 */
-	private Integer getObjectState(String objectName, String transactionNumber, Boolean isRead) {
+	private Integer getObjectState(String transactionNumber, String objectName, Boolean isRead) {
 		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();	// transaction who has the exclusive lock
 		List<String> sharedTransactionsLock = this.lockTable.get(objectName).getKey();	// transaction who has the exclusive lock
 		
@@ -254,6 +295,10 @@ public class Scheduler2PL {
 			// shared lock case
 			if(!isRead) {
 				// shared lock case, write operation: free object
+				if(sharedTransactionsLock.contains(transactionNumber)) {
+					// upgrading lock
+					return 3;
+				}
 				return 1;
 			}
 			// read case
