@@ -362,10 +362,14 @@ public class Scheduler2PL {
 				break;
 			}
 			// check if we can start the shrinking phase if it is not already started
-			if(!this.isShrinkingPhase.get(transactionLock) &&
+			if(!this.isShrinkingPhase.get(transactionLock) &&	// shrinking phase not started
 			   (
-			    !OperationUtils.use(operation, objectName) && 
-				!this.lockTable.get(OperationUtils.getObjectName(operation)).get(1).equals(transactionLock)
+			    !OperationUtils.use(operation, objectName) && 	// operation on an object, different from the object to unlock 
+				this.getObjectState(
+						OperationUtils.getTransactionNumber(operation),
+						OperationUtils.getObjectName(operation),
+						OperationUtils.isRead(operation)
+						) == 0// check if the object is already locked
 			    )
 			 ) {
 				// we need to lock another object first
