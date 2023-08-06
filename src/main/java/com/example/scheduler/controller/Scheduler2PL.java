@@ -1,11 +1,14 @@
 package com.example.scheduler.controller;
 
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +32,7 @@ public class Scheduler2PL {
 	// Internal computation
 	HashMap<String, Boolean> isShrinkingPhase;
 	HashMap<String, Integer> countOperations;
-	HashMap<String, Entry<List<String>, String>> lockTable;
+	HashMap<String, SimpleEntry<List<String>, String>> lockTable;
 	WaitForGraph waitForGraph;
 	HashMap<String, List<String>> blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
 	
@@ -45,7 +48,7 @@ public class Scheduler2PL {
 		this.transactions = iB.getTransactions();
 		
 		// Build the lock table, one row for each object
-		HashMap<String, Entry<List<String>, String>> lockTable = new HashMap<String, Entry<List<String>, String>>();
+		this.lockTable = new HashMap<String, SimpleEntry<List<String>, String>>();
 		for(String operation: schedule) {
 			if(OperationUtils.isCommit(operation)) {
 				// skip operations without objects
@@ -53,15 +56,14 @@ public class Scheduler2PL {
 			}
 			String objectName = OperationUtils.getObjectName(operation);
 			
-			if(!lockTable.containsKey(objectName)) {
+			if(!this.lockTable.containsKey(objectName)) {
 				List<String> sharedLocks = new ArrayList<String>();
 				// first column represents the transactions which get the shared lock
 				// second column represents the transaction which gets the exclusive lock
-				Entry<List<String>, String> locks = Map.entry(sharedLocks, "");
-				lockTable.put(objectName, locks);	
+				SimpleEntry<List<String>, String> locks = new AbstractMap.SimpleEntry<List<String>, String>(sharedLocks, "");
+				this.lockTable.put(objectName, locks);
 			}
 		}
-		this.lockTable = lockTable;
 		
 		// Initialize the counter and the shrinking phase for each transaction
 		this.countOperations = new HashMap<String, Integer>();
@@ -79,7 +81,6 @@ public class Scheduler2PL {
 	}
 	
 	public OutputBean check() throws InternalErrorException {
-		
 		try {
 			this.executeSchedule(this.schedule);
 			this.unlockAllObjects();
@@ -121,7 +122,7 @@ public class Scheduler2PL {
 			}
 		}
 	}
-	
+
 	/**
 	 * Try to resume blocked transactions
 	 * @throws DeadlockException 
@@ -170,7 +171,9 @@ public class Scheduler2PL {
 					}
 				} else {
 					// unlock shared locks
-					for(String sharedTransactionLock: this.lockTable.get(object).getKey()) {
+					List<String> list = this.lockTable.get(object).getKey();
+					System.out.printf("---%s", list);
+					for(String sharedTransactionLock: list) {
 						try {
 							this.unlock(sharedTransactionLock, object);
 						} catch (TransactionBlockedException e) {
@@ -208,7 +211,7 @@ public class Scheduler2PL {
 		// lock object
 		String objectName = OperationUtils.getObjectName(operation);
 		Boolean isRead = OperationUtils.isRead(operation);
-		Integer objectState = this.getObjectState(objectName, transactionNumber, isRead);
+		Integer objectState = this.getObjectState(transactionNumber, objectName, isRead);
 		switch(objectState) {
 			case 0:
 				// object already locked by the same transaction
@@ -256,13 +259,13 @@ public class Scheduler2PL {
 	private void updateLocks(String transactionNumber, String objectName, Boolean isRead, String operation) {
 		if(!isRead) {
 			// write operation
-			this.lockTable.get(operation).setValue(transactionNumber);	// update lockTable's exclusive lock
+			this.lockTable.get(objectName).setValue(transactionNumber);	// update lockTable's exclusive lock
 		} else {
 			// read operation
 			if(this.isLockShared) {
-				this.lockTable.get(operation).getKey().add(transactionNumber); // update lockTable's shared lock
+				this.lockTable.get(objectName).getKey().add(transactionNumber); // update lockTable's shared lock
 			} else {
-				this.lockTable.get(operation).setValue(transactionNumber);	// update lockTable's exclusive lock
+				this.lockTable.get(objectName).setValue(transactionNumber);	// update lockTable's exclusive lock
 			}
 		}
 		this.addLockToFinalSchedule(operation);			// add the write lock to the final schedule
@@ -369,7 +372,7 @@ public class Scheduler2PL {
 						OperationUtils.getTransactionNumber(operation),
 						OperationUtils.getObjectName(operation),
 						OperationUtils.isRead(operation)
-						) == 0// check if the object is already locked
+						) != 0// check if the object is already locked
 			    )
 			 ) {
 				// we need to lock another object first
@@ -388,7 +391,12 @@ public class Scheduler2PL {
 		}	
 		
 		// unlock the object
-		this.lockTable.get(objectName).set(1, "");
+		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();
+		if(exclusiveTransactionLock.equals(transactionLock)) {
+			this.lockTable.get(objectName).setValue("");
+		} else {
+			this.lockTable.get(objectName).getKey().remove(transactionLock);
+		}
 		this.scheduleWithLocks.add(OperationUtils.createOperation("u", transactionLock, objectName));
 		
 	}

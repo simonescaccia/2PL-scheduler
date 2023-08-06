@@ -106,4 +106,23 @@ public class Scheduler2PLTest {
 		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
+	@Test
+	public void checkReadNoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x)";
+		String outputSchedule = "sl1(x) r1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkWriteNoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x)";
+		String outputSchedule = "xl1(x) w1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
 }
