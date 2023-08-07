@@ -125,4 +125,44 @@ public class Scheduler2PLTest {
 		OutputBean oB = s2PL.check();
 		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
 	}
+	
+	@Test
+	public void checkLockUpgradeNoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) xl1(x) w1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkRead1Read2NoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) r2(x)";
+		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u1(x) u2(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkLockUpgradeMoreSharedLocksNoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) r2(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u2(x) xl1(x) w1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkBlock2NoAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) xl1(x) w1(x) u1(x) xl2(x) w2(x) u2(x)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
 }

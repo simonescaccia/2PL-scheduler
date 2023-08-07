@@ -3,15 +3,13 @@ package com.example.scheduler.controller;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.example.scheduler.exception.BlockTransactionException;
 import com.example.scheduler.exception.DeadlockException;
 import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.TransactionBlockedException;
@@ -149,8 +147,8 @@ public class Scheduler2PL {
 				this.executeSchedule(blockedOperations);
 				// after resuming the first transaction the adjacencyList may changes, then we continue to resume transaction recursively  
 				break;
-			} catch (TransactionBlockedException e) {
-				// the transaction can't be resumed
+			} catch (BlockTransactionException e) {
+				// the transaction can't be resumed, it is also already blocked
 				continue;
 			}
 		}
@@ -167,17 +165,16 @@ public class Scheduler2PL {
 					try {
 						this.unlock(exclusiveTransactionLock, object);
 					} catch (TransactionBlockedException e) {
-						throw new InternalErrorException("Internal error during the unlocking phase");
+						throw new InternalErrorException("Internal error during the unlocking phase of exclusive locks");
 					}
 				} else {
 					// unlock shared locks
-					List<String> list = this.lockTable.get(object).getKey();
-					System.out.printf("---%s", list);
+					List<String> list = new ArrayList<String>(this.lockTable.get(object).getKey());
 					for(String sharedTransactionLock: list) {
 						try {
 							this.unlock(sharedTransactionLock, object);
 						} catch (TransactionBlockedException e) {
-							throw new InternalErrorException("Internal error during the unlocking phase");
+							throw new InternalErrorException("Internal error during the unlocking phase shared locks");
 						}
 					}
 				}
@@ -212,51 +209,69 @@ public class Scheduler2PL {
 		String objectName = OperationUtils.getObjectName(operation);
 		Boolean isRead = OperationUtils.isRead(operation);
 		Integer objectState = this.getObjectState(transactionNumber, objectName, isRead);
+		logger.log(Level.INFO, String.format("Object state: %d", objectState));
 		switch(objectState) {
 			case 0:
 				// object already locked by the same transaction
 				return;
 			case 1:
 				// free object, lock
-				this.updateLocks(transactionNumber, objectName, isRead, operation);
+				this.insertLock(transactionNumber, objectName, isRead, operation);
 				return;
 			case 2:
-				// the object is already locked by another transaction, try to unlock
-				String transactionLock = this.lockTable.get(objectName).getValue();
-				try {
-					this.unlock(transactionLock, objectName);
-					this.updateLocks(transactionNumber, objectName, isRead, operation);
-				} catch (TransactionBlockedException e) {
-					// can't unlock the object
-					this.blockTransaction(operation, transactionLock);
-				}
+				this.unlockExclusiveLock(operation, objectName);
+				this.insertLock(transactionNumber, objectName, isRead, operation);
 				return;
 			case 3:
 				// upgrade lock
 				this.upgradeLock(transactionNumber, objectName, isRead, operation);
+				return;
+			case 4:
+				// the object is already locked by another transaction through a shared lock, try to unlock
+				this.unlockAllSharedLocks(operation, objectName);
+				this.insertLock(transactionNumber, objectName, isRead, operation);
+				return;
 			default:
-				throw new InternalErrorException();
+				throw new InternalErrorException("Internal error: locking situation not managed");
 		}
 	}
 	
 	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) throws TransactionBlockedException, DeadlockException {
-		// remove the shared lock
+		// remove the shared lock from the lock table
 		this.lockTable.get(objectName).getKey().remove(transactionNumber);
+		this.unlockAllSharedLocks(operation, objectName);
+		// update the exclusive lock
+		this.insertLock(transactionNumber, objectName, isRead, operation);
+	}
+
+	private void unlockExclusiveLock(String operation, String objectName) throws TransactionBlockedException, DeadlockException {
+		// the object is already locked by another transaction through an exclusive lock, try to unlock
+		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();
+		if(exclusiveTransactionLock.equals("")) {
+			return;
+		}
+		try {
+			this.unlock(exclusiveTransactionLock, objectName);	
+		} catch (BlockTransactionException e) {
+			// can't unlock the object
+			this.blockTransaction(operation, exclusiveTransactionLock);
+		}
+	}
+	
+	private void unlockAllSharedLocks(String operation, String objectName) throws TransactionBlockedException, DeadlockException {
 		// unlock all the other shared locks
-		for(String transactionWithSharedLock: this.lockTable.get(objectName).getKey()) {
+		List<String> sharedLocks = new ArrayList<String>(this.lockTable.get(objectName).getKey());
+		for(String transactionWithSharedLock: sharedLocks) {
 			try {
 				this.unlock(transactionWithSharedLock, objectName);
-				this.updateLocks(transactionNumber, objectName, isRead, operation);
-			} catch (TransactionBlockedException e) {
+			} catch (BlockTransactionException e) {
 				// can't unlock the object
 				this.blockTransaction(operation, transactionWithSharedLock);
 			}
 		}
-		// update the exclusive lock
-		this.updateLocks(transactionNumber, objectName, isRead, operation);
 	}
-
-	private void updateLocks(String transactionNumber, String objectName, Boolean isRead, String operation) {
+	
+	private void insertLock(String transactionNumber, String objectName, Boolean isRead, String operation) {
 		if(!isRead) {
 			// write operation
 			this.lockTable.get(objectName).setValue(transactionNumber);	// update lockTable's exclusive lock
@@ -282,8 +297,9 @@ public class Scheduler2PL {
 		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();	// transaction who has the exclusive lock
 		List<String> sharedTransactionsLock = this.lockTable.get(objectName).getKey();	// transaction who has the exclusive lock
 		
-		if(!exclusiveTransactionLock.equals(transactionNumber) && !exclusiveTransactionLock.equals("")) {
-			// object already locked by another transaction
+		if(!exclusiveTransactionLock.equals("") && 
+		   !exclusiveTransactionLock.equals(transactionNumber)) {
+			// object already locked by another transaction: exclusive lock
 			return 2;
 		}
 		if(exclusiveTransactionLock.equals(transactionNumber)) {
@@ -302,7 +318,14 @@ public class Scheduler2PL {
 					// upgrading lock
 					return 3;
 				}
-				return 1;
+				if(sharedTransactionsLock.size() > 0) {
+					// object already locked through a shared lock
+					return 4;
+				}
+				if(sharedTransactionsLock.size() == 0) {
+					// free object
+					return 1;
+				}
 			}
 			// read case
 			if(sharedTransactionsLock.contains(transactionNumber)) {
@@ -340,12 +363,13 @@ public class Scheduler2PL {
 	}
 
 	/**
-	 * If the transaction doesn't need anymore the lock on objectName and it has already all the locks, execute the unlock
+	 * If the transaction doesn't need anymore the lock on objectName and it has already all the locks for the other objects, 
+	 * execute the unlock
 	 * @param transactionLock: the transaction who has the lock on objectName
 	 * @param objectName: object locked
 	 * @throws TransactionBlockedException 
 	 */
-	private void unlock(String transactionLock, String objectName) throws TransactionBlockedException {
+	private void unlock(String transactionLock, String objectName) throws BlockTransactionException {
 		List<String> operations = this.transactions.get(transactionLock);
 		Integer executedOperations = this.countOperations.get(transactionLock);
 		Integer operationsListLenght = operations.size(); 
@@ -387,7 +411,7 @@ public class Scheduler2PL {
 		}
 		
 		if(!unlock || !this.isShrinkingPhase.get(transactionLock)) {
-			throw new TransactionBlockedException();
+			throw new BlockTransactionException();
 		}	
 		
 		// unlock the object
