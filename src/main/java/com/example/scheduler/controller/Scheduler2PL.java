@@ -130,6 +130,7 @@ public class Scheduler2PL {
 	private void resume() throws DeadlockException, InternalErrorException {
 		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
 		for(String blockedTransaction: adjacencyList.keySet()) {
+			logger.log(Level.INFO, String.format("Try to resuming blocked transaction %s", blockedTransaction));
 			// try to unlock blocked transaction
 			String waitForTransaction = adjacencyList.get(blockedTransaction).getKey();
 			String object = adjacencyList.get(blockedTransaction).getValue();
@@ -433,17 +434,17 @@ public class Scheduler2PL {
 		Integer operationsListLenght = operations.size(); 
 		List<String> remainingOperations = operations.subList(executedOperations, operationsListLenght);
 		
-		Boolean unlock = true;
 		Boolean isShrinkingPhasePossible = true;
-		
+		logger.log(Level.INFO, String.format("this.isShrinkingPhase.get(transactionLock): %s", this.isShrinkingPhase.get(transactionLock)));
 		for(String operation: remainingOperations) {
+			logger.log(Level.INFO, String.format("operation: %s", operation));
 			if(OperationUtils.isCommit(operation)) {
 				continue;
 			}
 			// check if remainingOperations contains operations on the object
 			if(OperationUtils.use(operation, objectName)) {
 				// we need to use the object
-				unlock = false;
+				isShrinkingPhasePossible = false;
 				break;
 			}
 			// check if we can start the shrinking phase if it is not already started
@@ -454,7 +455,7 @@ public class Scheduler2PL {
 						OperationUtils.getTransactionNumber(operation),
 						OperationUtils.getObjectName(operation),
 						OperationUtils.isRead(operation)
-						) != 0// check if the object is already locked
+						) != 0 // check if the object is already locked
 			    )
 			 ) {
 				// we need to lock another object first
@@ -462,15 +463,16 @@ public class Scheduler2PL {
 				break;
 			}
 		}
-		   
+		
 		if(!this.isShrinkingPhase.get(transactionLock) && isShrinkingPhasePossible) {
+			logger.log(Level.INFO, String.format("Here"));
 			// start the shrinking phase
 			this.isShrinkingPhase.put(transactionLock, true);
 		}
 		
-		if(!unlock || !this.isShrinkingPhase.get(transactionLock)) {
+		if(!this.isShrinkingPhase.get(transactionLock)) {
 			throw new BlockTransactionException();
-		}	
+		}
 		
 		// unlock the object
 		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();
