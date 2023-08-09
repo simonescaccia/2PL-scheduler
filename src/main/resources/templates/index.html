@@ -58,6 +58,14 @@
 			</table>
 			<p th:text="'Schedule with locks: ' + ${scheduleWithLocks}" />
 			<table>
+				<tr th:each="transaction: ${transactionsWithLocks}">
+					<td th:text="'T' + ${transaction.key} + ':'"/>
+					<td th:each="operation: ${transaction.value}">
+						<span th:text="' ' + ${operation}"></span>
+					</td>
+				</tr>
+			</table><br>
+			<table>
 				<tr>
 					<td>Log:</td>
 				</tr>

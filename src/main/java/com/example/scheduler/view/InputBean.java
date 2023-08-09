@@ -38,9 +38,7 @@ public class InputBean {
 				)); 
 			} else {
 				
-				String transactionNumber = OperationUtils.getTransactionNumber(
-						operation
-						);
+				String transactionNumber = OperationUtils.getTransactionNumber(operation);
 				if (!this.transactions.containsKey(transactionNumber)) {
 					// add the new transaction
 					List<String> transactionOperations = new ArrayList<String>();
