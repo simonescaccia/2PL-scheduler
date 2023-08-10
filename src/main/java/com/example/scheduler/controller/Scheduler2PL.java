@@ -30,7 +30,8 @@ public class Scheduler2PL {
 	
 	// Internal computation
 	HashMap<String, Boolean> isShrinkingPhase;
-	HashMap<String, Integer> countOperations;
+	HashMap<String, Integer> countOperations; // index of the last executed operation for each transaction
+	Integer countOperationsSchedule;	// index of the last executed operation in the schedule
 	HashMap<String, SimpleEntry<List<String>, String>> lockTable;
 	WaitForGraph waitForGraph;
 	HashMap<String, List<String>> blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
@@ -197,10 +198,14 @@ public class Scheduler2PL {
 			}
 		}
 	}
-
+	
 	private void incrementExecutedOperation(String operation) {
-		String transaction = OperationUtils.getTransactionNumber(operation);
-		this.countOperations.put(transaction, this.countOperations.get(transaction) + 1);
+		if(!this.isLockAnticipation) {
+			String transaction = OperationUtils.getTransactionNumber(operation);
+			this.countOperations.put(transaction, this.countOperations.get(transaction) + 1);
+		} else {
+			this.countOperationsSchedule += 1;
+		}
 	}
 
 	private void execute(String operation) {
@@ -271,8 +276,13 @@ public class Scheduler2PL {
 	}
 	
 	protected void anticipateLocks(RequiredLocksToUnlockObject requiredLocksToUnlockObject) {
-		// TODO Auto-generated method stub
-		
+		for(String operation: requiredLocksToUnlockObject.getRequiredLocksOperations()) {
+			try {
+				this.lock(operation);
+			} catch (TransactionBlockedException | DeadlockException | InternalErrorException e) {
+				// TODO
+			}
+		}
 	}
 
 	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) throws TransactionBlockedException, DeadlockException {
@@ -442,10 +452,7 @@ public class Scheduler2PL {
 	 * @throws TransactionBlockedException 
 	 */
 	private void unlock(String transactionLock, String objectName) throws UnableToLockException {
-		List<String> operations = this.transactions.get(transactionLock);
-		Integer executedOperations = this.countOperations.get(transactionLock);
-		Integer operationsListLenght = operations.size(); 
-		List<String> remainingOperations = operations.subList(executedOperations, operationsListLenght);
+		List<String> remainingOperations = this.getRemainingOperations(transactionLock);
 		
 		RequiredLocksToUnlockObject requiredLocksToUnlock = new RequiredLocksToUnlockObject(objectName);
 		Boolean unlock = true;
@@ -498,6 +505,19 @@ public class Scheduler2PL {
 		this.scheduleWithLocks.add(OperationUtils.createOperation("u", transactionLock, objectName));
 		
 	}
+
+	private List<String> getRemainingOperations(String transactionLock) {
+		if(!this.isLockAnticipation) {
+			// transaction remaining operations
+			List<String> operations = this.transactions.get(transactionLock);
+			Integer executedOperations = this.countOperations.get(transactionLock);
+			Integer operationsListLenght = operations.size(); 
+			return operations.subList(executedOperations, operationsListLenght);
+		} else {
+			// schedule remaining operations
+			return schedule.subList(this.countOperationsSchedule, this.schedule.size());
+		}
+	}		
 
 	private void addLockToFinalSchedule(String operation) {
 		String transaction = OperationUtils.getTransactionNumber(operation);
