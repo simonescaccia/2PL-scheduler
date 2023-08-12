@@ -175,32 +175,28 @@ public class Scheduler2PL {
 
 	private void unlockAllObjects() throws InternalErrorException {
 		for(String object: this.lockTable.keySet()) {
-			if(this.isLockAnticipation) {
-				 //TODO
-			} else { 
-				UnableToLockExceptionCallback callback;
-				// unlock exclusive lock
-				callback = new UnableToLockExceptionCallback() {
-					@Override
-					public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws InternalErrorException {
-						throw new InternalErrorException("Internal error during the unlocking phase of exclusive locks");
-					}
-				};
-				try {
-					this.unlockExclusiveLock(object, callback);
-				} catch (TransactionBlockedException | DeadlockException | LockAnticipationException e) {}
-				
-				// unlock shared locks
-				callback = new UnableToLockExceptionCallback() {
-					@Override
-					public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws InternalErrorException {
-						throw new InternalErrorException("Internal error during the unlocking phase shared locks");
-					}
-				};
-				try {
-					this.unlockAllSharedLocks(object, callback);
-				} catch (TransactionBlockedException | DeadlockException | LockAnticipationException e) {}
-			}
+			UnableToLockExceptionCallback callback;
+			// unlock exclusive lock
+			callback = new UnableToLockExceptionCallback() {
+				@Override
+				public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws InternalErrorException {
+					throw new InternalErrorException("Internal error during the unlocking phase of exclusive locks");
+				}
+			};
+			try {
+				this.unlockExclusiveLock(object, callback);
+			} catch (TransactionBlockedException | DeadlockException | LockAnticipationException e) {}
+			
+			// unlock shared locks
+			callback = new UnableToLockExceptionCallback() {
+				@Override
+				public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws InternalErrorException {
+					throw new InternalErrorException("Internal error during the unlocking phase shared locks");
+				}
+			};
+			try {
+				this.unlockAllSharedLocks(object, callback);
+			} catch (TransactionBlockedException | DeadlockException | LockAnticipationException e) {}
 		}
 	}
 	
@@ -237,7 +233,7 @@ public class Scheduler2PL {
 		UnableToLockExceptionCallback unableToLockCallback = new UnableToLockExceptionCallback() {
 			@Override
 			public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-					throws TransactionBlockedException, DeadlockException, LockAnticipationException {
+					throws TransactionBlockedException, DeadlockException, LockAnticipationException, InternalErrorException {
 				// can't unlock the object
 				if(!Scheduler2PL.this.isLockAnticipation) {
 					Scheduler2PL.this.blockTransaction(
@@ -283,7 +279,7 @@ public class Scheduler2PL {
 	}
 	
 	private void anticipateLocks(String operation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-			throws LockAnticipationException {
+			throws LockAnticipationException, InternalErrorException {
 		// check if lock anticipation is possible
 		if(!requiredLocksToUnlockObject.getIsLastUsage()) {
 			throw new LockAnticipationException(
@@ -291,13 +287,26 @@ public class Scheduler2PL {
 							+ "The object will be used again by the same transaction: %s", 
 							operation,
 							requiredLocksToUnlockObject.getObjectToUnlock(),
-							requiredLocksToUnlockObject.getTransacitonToUock(),
+							requiredLocksToUnlockObject.getTransacitonToUnlock(),
 							String.join(", ", requiredLocksToUnlockObject.getOtherUsageOperations())
 							));
-		} else {
-			
 		}
+		// check if lock anticipation is possible
+		requiredLocksToUnlockObject.checkLockAnticipation(operation);
 		
+		UnableToLockExceptionCallback callback = new UnableToLockExceptionCallback() {
+			@Override
+			public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws LockAnticipationException, InternalErrorException {
+				Scheduler2PL.this.anticipateLocks(
+						this.operation,
+						requiredLocksToUnlockObject);			
+			}
+		};
+		for(String object: requiredLocksToUnlockObject.getOtherRequiredLocks()) {
+			try {
+				this.unlockSetExceptionCallback(requiredLocksToUnlockObject.getTransacitonToUnlock(), object, callback);
+			} catch (TransactionBlockedException | DeadlockException e) {}
+		}
 	}
 
 	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) 
@@ -472,12 +481,18 @@ public class Scheduler2PL {
 	private void unlock(String transactionLock, String objectName) throws UnableToLockException {
 		List<String> remainingOperations = this.getRemainingOperations(transactionLock);
 		
-		RequiredLocksToUnlockObject requiredLocksToUnlock = new RequiredLocksToUnlockObject(transactionLock, objectName);
+		RequiredLocksToUnlockObject requiredLocksToUnlock = new RequiredLocksToUnlockObject(
+				transactionLock, objectName, this.isLockShared);
 		Boolean unlock = true;
 		Boolean isShrinkingPhasePossible = true;
 		HashMap<String, List<String>> objectSubschedule = new HashMap<String, List<String>>();
 
 		for(String operation: remainingOperations) {
+			
+			if(OperationUtils.isCommit(operation)) {
+				continue;
+			}
+			
 			String object = OperationUtils.getObjectName(operation);
 			String transaction = OperationUtils.getTransactionNumber(operation);
 			Boolean opUseObj = OperationUtils.use(operation, objectName);
@@ -495,9 +510,6 @@ public class Scheduler2PL {
 				}
 			}
 			
-			if(OperationUtils.isCommit(operation)) {
-				continue;
-			}
 			// check if remainingOperations contains operations on the object
 			if(opUseObj) {
 				// we need to use the object
