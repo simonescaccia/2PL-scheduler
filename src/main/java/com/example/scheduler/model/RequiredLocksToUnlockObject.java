@@ -7,7 +7,7 @@ import java.util.List;
 public class RequiredLocksToUnlockObject {
 	
 	String transactionToUnlock;
-	String objectToUnlock;			// object to unlock
+	String objectToUnlock;				// object to unlock
 	Boolean isLastUsage;				// the transaction doesn't need other accesses to the object 
 	List<String> otherUsageOperations;	// if isLastUsage is false, contains the operations that use the object
 	HashMap<String, List<String>> otherRequiredLocks;

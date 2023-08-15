@@ -43,6 +43,12 @@ public class OperationUtils {
 		return Pattern.matches(regexSharedLock, operation);
 	}
 	
+	public static boolean isLock(String operation) {
+		return OperationUtils.isExclusiveLock(operation) || 
+			   OperationUtils.isSharedLock(operation) || 
+			   OperationUtils.isGenericLock(operation);
+	}
+	
 	public static String getTransactionNumber(String operation) {
 		int indexNumberStart = 0;
 		int indexNumberEnd = 0;

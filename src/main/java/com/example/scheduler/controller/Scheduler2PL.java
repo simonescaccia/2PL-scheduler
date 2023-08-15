@@ -117,6 +117,9 @@ public class Scheduler2PL {
 			} catch (DeadlockException e) {
 				logger.log(Level.INFO, "Deadlock");
 				throw new DeadlockException();
+			} catch (LockAnticipationException e) {
+				logger.log(Level.INFO, "Lock anticipation not possible");
+				throw new LockAnticipationException();
 			}
 			this.execute(operation);
 			this.incrementExecutedOperation(operation);
@@ -218,7 +221,8 @@ public class Scheduler2PL {
 		this.scheduleWithLocks.add(operation);
 	}
 	
-	private void lock(String operation) throws TransactionBlockedException, DeadlockException, InternalErrorException, LockAnticipationException {
+	private void lock(String operation) 
+			throws TransactionBlockedException, DeadlockException, InternalErrorException, LockAnticipationException {
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
 		// check if the transaction is blocked
@@ -282,33 +286,41 @@ public class Scheduler2PL {
 	}
 	
 	private void anticipateLocks(String operation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-			throws LockAnticipationException, InternalErrorException, TransactionBlockedException, DeadlockException {
+			throws TransactionBlockedException, DeadlockException, LockAnticipationException, InternalErrorException {
 		// check if lock anticipation is possible
 		if(!requiredLocksToUnlockObject.getIsLastUsage()) {
 			String lockOperation = requiredLocksToUnlockObject.getOtherUsageOperations().get(0);
-			logger.log(Level.INFO, String.format("anticipateLocks operation %s", operation));
 			this.blockTransaction(operation, OperationUtils.getTransactionNumber(lockOperation));
-		} else {
-			// check if lock anticipation is possible
-			this.checkLockAnticipation(operation, requiredLocksToUnlockObject);
-			
+		} else {		
+			// check if lock anticipation is possible, so there is no operation that requires a lock on the same object before 
+			HashMap<String, String> operationsToLockByObject = this.checkLockAnticipation(operation, requiredLocksToUnlockObject);
+			// If the unlocking is not possible, we need to try to anticipate all the locks first
+			// Add also a wait for edge to recognize possible deadlocks
+			//TODO deadlock management
+
+			this.log.add(String.format("Anticipating lock for %s", operation));
 			UnableToLockExceptionCallback callback = new UnableToLockExceptionCallback() {
 				@Override
 				public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
 						throws LockAnticipationException, InternalErrorException, TransactionBlockedException, DeadlockException {
+					
 					Scheduler2PL.this.anticipateLocks(
 							this.operation,
 							requiredLocksToUnlockObject);			
 				}
 			};
-			for(String object: requiredLocksToUnlockObject.getOtherRequiredLocks().keySet()) {
-				this.unlockSetExceptionCallback(requiredLocksToUnlockObject.getTransactionToUnlock(), object, callback);
+			callback.setOperation(operation);
+			for(String object: operationsToLockByObject.keySet()) {
+				this.lock(operationsToLockByObject.get(object));
 			}
 		}
 	}
 
-	private void checkLockAnticipation(String lockOperation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
+	private HashMap<String, String> checkLockAnticipation(String lockOperation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
 			throws LockAnticipationException {
+		// output: operation to lock for each object 
+		HashMap<String, String> operationsToLockByObject = new HashMap<String, String>();
+		
 		// compute the check for each object to unlock
 		for(String object: requiredLocksToUnlockObject.getOtherRequiredLocks().keySet()) {
 			Boolean isOtherTransactionsOperationWrite = false;
@@ -321,7 +333,10 @@ public class Scheduler2PL {
 			for(String operation: requiredLocksToUnlockObject.getOtherRequiredLocks().get(object)) {
 				String transaction = OperationUtils.getTransactionNumber(operation);
 				Boolean isWrite = OperationUtils.isWrite(operation);
-				
+				if(isWrite || (!isWrite && !operationsToLockByObject.containsKey(object))) {
+					// update output: put read only if it is the first op. Put write every time
+					operationsToLockByObject.put(object, operation);
+				}
 				if(transaction.equals(requiredLocksToUnlockObject.getTransactionToUnlock())) {
 					transactionOperation = operation;
 					isTransactionOperationWrite = isWrite; 
@@ -379,6 +394,8 @@ public class Scheduler2PL {
 				}
 			}
 		}
+		
+		return operationsToLockByObject;
 	}
 	
 	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) 
@@ -520,7 +537,7 @@ public class Scheduler2PL {
 	}
 
 	public void blockTransaction(String operation, String transactionLock) throws TransactionBlockedException, DeadlockException {
-		logger.log(Level.INFO, String.format("operation: %s", operation));
+		logger.log(Level.INFO, String.format("Blocking transaction, operation %s", operation));
 
 		String objectName = OperationUtils.getObjectName(operation);
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
@@ -554,7 +571,6 @@ public class Scheduler2PL {
 	 */
 	private void unlock(String transactionLock, String objectName) throws UnableToLockException {
 		List<String> remainingSchedule = this.getRemainingSchedule(transactionLock);
-		logger.log(Level.INFO, String.format("RemainingOperations: %s", remainingSchedule));
 
 		RequiredLocksToUnlockObject requiredLocksToUnlock = new RequiredLocksToUnlockObject(
 				transactionLock, objectName, this.isLockShared);
@@ -619,7 +635,11 @@ public class Scheduler2PL {
 			if(!unlock) {
 				logger.log(Level.INFO, String.format("Unable to lock the object %s: lock must be reaccessed", objectName));
 			} else {
-				logger.log(Level.INFO, String.format("Unable to lock the object %s, can't start the shrinking phase", objectName));
+				logger.log(Level.INFO, 
+						String.format("Unable to lock the object %s, can't start the shrinking phase. "
+								+ "Required locks before starting unlocks: %s", 
+								objectName,
+								requiredLocksToUnlock.getOtherRequiredLocks()));
 			}
 			throw new UnableToLockException(requiredLocksToUnlock);
 		}
