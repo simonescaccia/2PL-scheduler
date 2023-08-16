@@ -269,7 +269,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkAnticipateLockAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "w1(x) w2(x) w1(y)";
-		String outputSchedule = "l1(x) w1(x) l1(y) u1(x) l2(x) w2(x) u2(x) u1(y)";
+		String outputSchedule = "l1(x) w1(x) l1(y) u1(x) l2(x) w2(x) w1(y) u2(x) u1(y)";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();

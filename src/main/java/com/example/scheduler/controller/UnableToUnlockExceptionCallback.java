@@ -6,12 +6,12 @@ import com.example.scheduler.exception.LockAnticipationException;
 import com.example.scheduler.exception.TransactionBlockedException;
 import com.example.scheduler.model.RequiredLocksToUnlockObject;
 
-public abstract class UnableToLockExceptionCallback {
+public abstract class UnableToUnlockExceptionCallback {
 	
 	String operation;
 	String transactionLock;
 	
-	public UnableToLockExceptionCallback() {}
+	public UnableToUnlockExceptionCallback() {}
 	
 	public void setOperation(String operation) {
 		this.operation = operation;

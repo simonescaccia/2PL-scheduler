@@ -6,13 +6,13 @@ import com.example.scheduler.model.RequiredLocksToUnlockObject;
  * The transaction can't be unlocked, then call blockTransaction to block it if not already blocked
  *
  */
-public class UnableToLockException extends Exception{
+public class UnableToUnlockException extends Exception{
 	
 	private static final long serialVersionUID = 6100616968481336593L;
 	
 	RequiredLocksToUnlockObject requiredLocksToUnlock;
 
-	public UnableToLockException(RequiredLocksToUnlockObject requiredLocksToUnlock) {
+	public UnableToUnlockException(RequiredLocksToUnlockObject requiredLocksToUnlock) {
 		super();
 		this.requiredLocksToUnlock = requiredLocksToUnlock;
 	}
