@@ -12,12 +12,19 @@ public class OutputBean {
 	List<String> log;					// Description of the computation
 	Boolean result;						// Define if the schedule follows the 2PL protocol
 	
-	HashMap<String, List<String>> transactionsWithLocks = new HashMap<String, List<String>>();
+	HashMap<String, String> transactionsWithLocks = new HashMap<String, String>();
+	HashMap<String, String> transactions = new HashMap<String, String>();
 	
-	public OutputBean(List<String> scheduleWithLocks, List<String> log, Boolean result) throws InternalErrorException {
+	public OutputBean(
+			List<String> schedule,
+			List<String> scheduleWithLocks, 
+			List<String> log, 
+			Boolean result) 
+					throws InternalErrorException {
 		this.log = log;
 		this.result = result;
 		this.setTransactionsWithLocks(scheduleWithLocks);
+		this.setTransactions(schedule);
 		this.formatScheduleWithLocks(scheduleWithLocks);
 	}
 
@@ -33,8 +40,12 @@ public class OutputBean {
 		return this.result;
 	}
 	
-	public HashMap<String, List<String>> getTransactionsWithLocks(){
+	public HashMap<String, String> getTransactionsWithLocks(){
 		return this.transactionsWithLocks;
+	}
+	
+	public HashMap<String, String> getTransactions(){
+		return this.transactions;
 	}
 	
 	private void formatScheduleWithLocks(List<String> scheduleWithLocks) {
@@ -44,24 +55,42 @@ public class OutputBean {
 		}
 	}
 	
-	private void setTransactionsWithLocks(List<String> scheduleWithLocks) throws InternalErrorException {
-		for(String operation: scheduleWithLocks) {
+	private HashMap<String, List<String>> splitScheduleIntoTransaction(List<String> schedule) {
+		HashMap<String, List<String>> transactionSchedules = new HashMap<String, List<String>>();
+		// parse the schedule to split operations
+		for(String operation: schedule) {
 			String transactionNumber = OperationUtils.getTransactionNumber(operation);
-			if(!this.transactionsWithLocks.containsKey(transactionNumber)) {
+			if(!transactionSchedules.containsKey(transactionNumber)) {
 				// add the new transaction
 				List<String> transactionOperations = new ArrayList<String>();
 				transactionOperations.add(operation);
-				this.transactionsWithLocks.put(transactionNumber, transactionOperations);
+				transactionSchedules.put(transactionNumber, transactionOperations);
 			} else {
 				// append operation
-				this.transactionsWithLocks.get(transactionNumber).add(operation);
+				transactionSchedules.get(transactionNumber).add(operation);
 			}
 		}
+		return transactionSchedules;
+	}
+	
+	private HashMap<String, String> transactionScheduleToList(HashMap<String, List<String>> transactionSchedules) {
+		HashMap<String, String> transactionStringSchedules = new HashMap<String, String>();
+		// join lists to set string schedules
+		for(String transaction: transactionSchedules.keySet()) {
+			transactionStringSchedules.put(
+					transaction, 
+					String.join(" ", transactionSchedules.get(transaction)));
+		}
+		return transactionStringSchedules;
+	}
+	
+	private void setTransactionsWithLocks(List<String> scheduleWithLocks) throws InternalErrorException {
+		HashMap<String, List<String>> transactionsWithLocks = this.splitScheduleIntoTransaction(scheduleWithLocks);
 
-		// Check 2PL
+		// check 2PL
 		for(String transaction: this.transactionsWithLocks.keySet()) {
 			Boolean transactionShrinkingPhase = false;
-			for(String operation: this.transactionsWithLocks.get(transaction)) {
+			for(String operation: transactionsWithLocks.get(transaction)) {
 				if(OperationUtils.isUnlock(operation)) {
 					transactionShrinkingPhase = true;
 					continue;
@@ -76,5 +105,13 @@ public class OutputBean {
 				}
 			}
 		}
+		
+		// join lists to set string schedules
+		this.transactionsWithLocks = this.transactionScheduleToList(transactionsWithLocks);
+	}
+	
+	private void setTransactions(List<String> schedule) {
+		HashMap<String, List<String>> transactions = this.splitScheduleIntoTransaction(schedule);
+		this.transactions = this.transactionScheduleToList(transactions);
 	}
 }

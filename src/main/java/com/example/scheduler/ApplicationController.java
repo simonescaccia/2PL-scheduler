@@ -48,11 +48,11 @@ public class ApplicationController {
 			try {
 				// Check the input
 				InputBean iB = new InputBean(schedule, lockAnticipation, lockType);
-				model.addAttribute("transactions", iB.getTransactions());
 				
 				Scheduler2PL s2PL = new Scheduler2PL(iB);
 				OutputBean oB = s2PL.check();
 				
+				model.addAttribute("transactions", oB.getTransactions());
 				model.addAttribute("scheduleWithLocks", oB.getSchedleWithLocks());
 				model.addAttribute("log", oB.getLog());
 				model.addAttribute("result2PL", oB.getResult());

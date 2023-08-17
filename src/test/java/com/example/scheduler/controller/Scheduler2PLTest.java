@@ -277,6 +277,16 @@ public class Scheduler2PLTest {
 	}
 	
 	@Test
+	public void checkMultipleAnticipateLockAnticipationExclusive() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(x) w1(y) w1(z)";
+		String outputSchedule = "l1(x) w1(x) l1(y) l1(z) u1(x) l2(x) w2(x) w1(y) w1(z) u2(x) u1(y) u1(z)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
 	public void checkBlock2DelayResumeAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x) r1(y) w1(x) c1 c2";
 		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) c1 c2 u2(x) u1(y)";
@@ -291,6 +301,146 @@ public class Scheduler2PLTest {
 		String schedule = "w1(x) w2(y) w2(x) w1(y)";
 		String outputSchedule = "l1(x) w1(x) l2(y) w2(y)";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
+	}
+	
+	@Test
+	public void checkBlockAndLockAnticipationDeadlockAnticipationExclusive() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(y) r2(x) r1(y) w1(x) c1 c2";
+		String outputSchedule = "l1(x) r1(x) l2(y) w2(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
+	}
+	
+	@Test
+	public void checkReadAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x)";
+		String outputSchedule = "sl1(x) r1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkLockUpgradeAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) xl1(x) w1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkCommitAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "c1 c2";
+		String outputSchedule = "c1 c2";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkReadCommitAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) c1";
+		String outputSchedule = "sl1(x) r1(x) c1 u1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkRead1Read2AnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) r2(x)";
+		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u1(x) u2(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkLockUpgradeMoreSharedLocksAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) r2(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u2(x) xl1(x) w1(x) u1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkBlock2AnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(x) w1(x)";
+		String outputSchedule = "sl1(x) r1(x) xl1(x) w1(x) u1(x) xl2(x) w2(x) u2(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkBlock2MoreTimesAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w1(y) w2(x) w1(x) w2(y) r1(y)";
+		String outputSchedule = "sl1(x) r1(x) xl1(y) w1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) r1(y) u1(y) xl2(y) w2(y) u2(x) u2(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkAnticipateLockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(x) w1(y)";
+		String outputSchedule = "sl1(x) r1(x) xl1(y) u1(x) xl2(x) w2(x) w1(y) u2(x) u1(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkMultipleAnticipateLockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(x) r1(y) w1(z)";
+		String outputSchedule = "sl1(x) r1(x) sl1(y) xl1(z) u1(x) xl2(x) w2(x) r1(y) w1(z) u2(x) u1(y) u1(z)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkBlock2DelayResumeAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(x) r1(y) w1(x) c1 c2";
+		String outputSchedule = "sl1(x) r1(x) sl1(y) r1(y) w1(x) u1(x) xl2(x) w2(x) c1 c2 u2(x) u1(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+	}
+	
+	@Test
+	public void checkDeadlockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(y) w2(x) w1(y)";
+		String outputSchedule = "xl1(x) w1(x) xl2(y) w2(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
+	}
+	
+	@Test
+	public void checkBlockAndLockAnticipationDeadlockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "r1(x) w2(y) w2(x) r1(y) w1(x) c1 c2";
+		String outputSchedule = "sl1(x) r1(x) l2(y) w2(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
 		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
