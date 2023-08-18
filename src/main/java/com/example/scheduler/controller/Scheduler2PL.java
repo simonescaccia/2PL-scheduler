@@ -140,10 +140,10 @@ public class Scheduler2PL {
 	 */
 	private void resume() throws DeadlockException, InternalErrorException {
 		HashMap<String, Entry<String, String>> adjacencyList = this.waitForGraph.getAdjacencyList();
+		logger.log(Level.INFO, String.format("adjacencyList %s", adjacencyList));
 		for(String blockedTransaction: this.blockedOperations.getTransactions()) {
 			logger.log(Level.INFO, String.format("Try to resuming blocked transaction %s", blockedTransaction));
 			// try to unlock blocked transaction
-			logger.log(Level.INFO, String.format("adjacencyList %s", adjacencyList));
 			String waitForTransaction = adjacencyList.get(blockedTransaction).getKey();
 			String object = adjacencyList.get(blockedTransaction).getValue();
 			
@@ -287,7 +287,9 @@ public class Scheduler2PL {
 				return;
 			case 3:
 				// upgrade lock
-				this.upgradeLock(transactionNumber, objectName, isRead, operation);
+				this.lockTable.get(objectName).getKey().remove(transactionNumber); // remove the shared lock from the lock table
+				this.unlockAllSharedLocks(objectName, unableToUnlockCallback);
+				this.insertLock(transactionNumber, objectName, isRead, operation);
 				return;
 			case 4:
 				// the object is already locked by another transaction through a shared lock, try to unlock
@@ -346,7 +348,7 @@ public class Scheduler2PL {
 			throws LockAnticipationException {
 		// output: operation to lock for each object 
 		HashMap<String, String> operationsToLockByObject = new HashMap<String, String>();
-		
+
 		// compute the check for each object to unlock
 		for(String object: requiredLocksToUnlockObject.getOtherRequiredLocks().keySet()) {
 			Boolean isOtherTransactionsOperationWrite = false;
@@ -359,11 +361,11 @@ public class Scheduler2PL {
 			for(String operation: requiredLocksToUnlockObject.getOtherRequiredLocks().get(object)) {
 				String transaction = OperationUtils.getTransactionNumber(operation);
 				Boolean isWrite = OperationUtils.isWrite(operation);
-				if(isWrite || (!isWrite && !operationsToLockByObject.containsKey(object))) {
-					// update output: put read only if it is the first op. Put write every time
-					operationsToLockByObject.put(object, operation);
-				}
 				if(transaction.equals(requiredLocksToUnlockObject.getTransactionToUnlock())) {
+					if(isWrite || (!isWrite && !operationsToLockByObject.containsKey(object))) {
+						// update output: put read only if it is the first op. Put write every time
+						operationsToLockByObject.put(object, operation);
+					}
 					transactionOperation = operation;
 					isTransactionOperationWrite = isWrite; 
 				} else if (!transaction.equals(requiredLocksToUnlockObject.getTransactionToUnlock())) {
@@ -404,7 +406,7 @@ public class Scheduler2PL {
 											transactionOperation,
 											otherTransactionFirstWrite));
 							throw new LockAnticipationException();
-						} else if(!isOtherTransactionsOperationWrite && isTransactionOperationWrite) {
+						} else if(isTransactionOperationWrite && !otherTransactionFirstRead.equals("")) {
 							this.log.add(String.format(errorMessage, 
 											operation,
 											object,
@@ -422,29 +424,6 @@ public class Scheduler2PL {
 		}
 		
 		return operationsToLockByObject;
-	}
-	
-	private void upgradeLock(String transactionNumber, String objectName, Boolean isRead, String operation) 
-			throws TransactionBlockedException, DeadlockException, LockAnticipationException {
-		// remove the shared lock from the lock table
-		this.lockTable.get(objectName).getKey().remove(transactionNumber);
-		
-		UnableToUnlockExceptionCallback unableToLockCallback = new UnableToUnlockExceptionCallback() {
-			@Override
-			public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws TransactionBlockedException, DeadlockException {
-				// can't unlock the object
-				Scheduler2PL.this.blockTransaction(
-						this.operation,
-						this.transactionLock);
-			}	
-		};
-		unableToLockCallback.setOperation(operation);
-		
-		try {
-			this.unlockAllSharedLocks(objectName, unableToLockCallback);
-		} catch (InternalErrorException e) {}
-		// update the exclusive lock
-		this.insertLock(transactionNumber, objectName, isRead, operation);
 	}
 
 	/**
@@ -676,6 +655,7 @@ public class Scheduler2PL {
 		} else {
 			this.lockTable.get(objectName).getKey().remove(transactionLock);
 		}
+		logger.log(Level.INFO, String.format("Add unlock %s", OperationUtils.createOperation("u", transactionLock, objectName)));
 		this.scheduleWithLocks.add(OperationUtils.createOperation("u", transactionLock, objectName));
 		
 	}

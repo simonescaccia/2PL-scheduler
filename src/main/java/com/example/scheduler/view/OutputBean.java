@@ -88,19 +88,31 @@ public class OutputBean {
 		HashMap<String, List<String>> transactionsWithLocks = this.splitScheduleIntoTransaction(scheduleWithLocks);
 
 		// check 2PL
-		for(String transaction: this.transactionsWithLocks.keySet()) {
+		HashMap<String, List<String>> unlocks = new HashMap<String, List<String>>();
+		for(String transaction: transactionsWithLocks.keySet()) {
 			Boolean transactionShrinkingPhase = false;
+			unlocks.put(transaction, new ArrayList<String>());
 			for(String operation: transactionsWithLocks.get(transaction)) {
 				if(OperationUtils.isUnlock(operation)) {
 					transactionShrinkingPhase = true;
+					if(unlocks.get(transaction).contains(operation)) {
+						// already unlocked this object
+						throw new InternalErrorException(
+								String.format("Internal error, output transaction %s doesn't follows the 2PL protocol, duplicated unlocks: %s. ",
+										transaction,
+										String.join(" ", transactionsWithLocks.get(transaction)))
+								+ "Log: "
+								+ String.join(". ", this.log));
+					}
+					unlocks.get(transaction).add(operation);
 					continue;
 				}
 				if(OperationUtils.isLock(operation) && transactionShrinkingPhase) {
 					throw new InternalErrorException(
 							String.format("Internal error, output transaction %s doesn't follows the 2PL protocol: %s. ",
 									transaction,
-									String.join(" ", this.transactionsWithLocks.get(transaction)))
-							+ "Log:"
+									String.join(" ", transactionsWithLocks.get(transaction)))
+							+ "Log: "
 							+ String.join(". ", this.log));
 				}
 			}

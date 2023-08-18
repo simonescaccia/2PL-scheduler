@@ -31,6 +31,9 @@ public class WaitForGraph {
 	}
 
 	public void removeEdge(String blockedTransaction) {
+		String waitForTransaction = this.adjacencyList.get(blockedTransaction).getKey();
+		String waitForObject = this.adjacencyList.get(blockedTransaction).getValue();
+		// search for waitForEdges (T2, X) in other blocked transactions and update T2 with blockedTransaction
 		this.adjacencyList.remove(blockedTransaction);
 	}
 }
