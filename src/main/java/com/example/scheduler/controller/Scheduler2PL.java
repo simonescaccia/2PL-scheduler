@@ -42,6 +42,7 @@ public class Scheduler2PL {
 	BlockedOperations blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
 	
 	// Output
+	List<String> topologicalOrder;
 	List<String> dataActionProjection;
 	List<String> scheduleWithLocks;
 	List<String> log;
@@ -88,6 +89,7 @@ public class Scheduler2PL {
 		this.countOperationsSchedule = 0;
 		this.remainingSchedule = new ArrayList<String>(this.schedule);
 		this.dataActionProjection = new ArrayList<String>();
+		this.topologicalOrder = new ArrayList<String>();
 	}
 	
 	public OutputBean check() throws InternalErrorException {
@@ -99,11 +101,16 @@ public class Scheduler2PL {
 			this.result = false;
 		}
 		
-		// compute DT(S)
-		this.computDataActionProjection();
-		
-		// build the precedence graph
-		this.buildPrecedenceGraph();
+		if(this.result) {
+			// compute DT(S)
+			this.computDataActionProjection();
+			
+			// build the precedence graph
+			this.buildPrecedenceGraph();
+			
+			// compute the topological order
+			this.computeTopologicalOrder();
+		}
 		
 		// return the schedule and the log
 		OutputBean outputBean = new OutputBean(
@@ -111,7 +118,8 @@ public class Scheduler2PL {
 				this.scheduleWithLocks, 
 				this.log, 
 				this.result,
-				this.dataActionProjection);
+				this.dataActionProjection,
+				this.topologicalOrder);
 		return outputBean;
 	}
 
@@ -711,9 +719,6 @@ public class Scheduler2PL {
 	}
 
 	private void computDataActionProjection() {
-		if(!this.result) {
-			return;
-		}
 		for(String operation: this.scheduleWithLocks) {
 			Boolean isLock = OperationUtils.isLock(operation);
 			Boolean isUnlock = OperationUtils.isUnlock(operation);
@@ -732,11 +737,9 @@ public class Scheduler2PL {
 	}
 	
 	private void buildPrecedenceGraph() {
-		if(!this.result) {
-			return;
-		}
 		for(int i=0; i<this.dataActionProjection.size()-1; i++) {
 			String operationI = this.schedule.get(i);
+			this.precedenceGraph.addNode(OperationUtils.getTransactionNumber(operationI));
 			if(OperationUtils.isCommit(operationI)) {
 				continue;
 			}
@@ -755,5 +758,9 @@ public class Scheduler2PL {
 				}
 			}
 		}
+	}
+
+	private void computeTopologicalOrder() throws InternalErrorException {
+		this.topologicalOrder = this.precedenceGraph.getTopologicalOrder();
 	}
 }

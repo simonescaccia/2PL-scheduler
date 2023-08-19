@@ -10,6 +10,7 @@ import com.example.scheduler.exception.InternalErrorException;
 public class OutputBean {
 	String scheduleWithLocks;			// Output schedule
 	String dataActionProjection;
+	String topologicalOrder;
 	List<String> log;					// Description of the computation
 	Boolean result;						// Define if the schedule follows the 2PL protocol
 	
@@ -21,7 +22,8 @@ public class OutputBean {
 			List<String> scheduleWithLocks, 
 			List<String> log, 
 			Boolean result, 
-			List<String> dataActionProjection) 
+			List<String> dataActionProjection, 
+			List<String> topologicalOrder) 
 					throws InternalErrorException {
 		this.log = log;
 		this.result = result;
@@ -29,6 +31,7 @@ public class OutputBean {
 		this.setTransactions(schedule);
 		this.formatScheduleWithLocks(scheduleWithLocks);
 		this.setDataActionProjection(dataActionProjection);
+		this.setTopologicalOrder(topologicalOrder);
 	}
 
 	public String getSchedleWithLocks() {
@@ -53,6 +56,10 @@ public class OutputBean {
 	
 	public String getDataActionProjection() {
 		return this.dataActionProjection;
+	}
+
+	public String getTopologicalOrder() {
+		return this.topologicalOrder;
 	}
 	
 	private void formatScheduleWithLocks(List<String> scheduleWithLocks) {
@@ -140,6 +147,14 @@ public class OutputBean {
 			this.dataActionProjection = "";		
 		} else {
 			this.dataActionProjection = String.join(" ", dataActionProjection);
+		}
+	}
+
+	private void setTopologicalOrder(List<String> topologicalOrder) {
+		if(topologicalOrder.size() == 0) {
+			this.topologicalOrder = "";
+		} else {
+			this.topologicalOrder = String.join(" ", topologicalOrder);
 		}
 	}
 }

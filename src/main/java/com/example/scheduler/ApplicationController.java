@@ -58,6 +58,7 @@ public class ApplicationController {
 				model.addAttribute("result2PL", oB.getResult());
 				model.addAttribute("transactionsWithLocks", oB.getTransactionsWithLocks());
 				model.addAttribute("dataActionProjection", oB.getDataActionProjection());
+				model.addAttribute("topologicalOrder", oB.getTopologicalOrder());
 				
 			} catch (InputBeanException | InternalErrorException e) {
 				model.addAttribute("error", e.getMessage());
