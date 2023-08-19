@@ -69,7 +69,8 @@
 				<tr th:each="logRow: ${log}">
 					<td th:text="${logRow}"/>
 				</tr>
-			</table>
+			</table><br>
+			<p th:text="'DT(S): ' + ${dataActionProjection}" />
 		</div>
 	</div> 
 </body>

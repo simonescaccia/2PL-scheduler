@@ -15,6 +15,7 @@ import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.LockAnticipationException;
 import com.example.scheduler.exception.TransactionBlockedException;
 import com.example.scheduler.model.BlockedOperations;
+import com.example.scheduler.model.PrecedenceGraph;
 import com.example.scheduler.model.RequiredLocksToUnlockObject;
 import com.example.scheduler.model.WaitForGraph;
 import com.example.scheduler.view.InputBean;
@@ -37,9 +38,11 @@ public class Scheduler2PL {
 	Integer countOperationsSchedule;	// index of the last executed operation in the schedule
 	HashMap<String, SimpleEntry<List<String>, String>> lockTable;
 	WaitForGraph waitForGraph;
+	PrecedenceGraph precedenceGraph;
 	BlockedOperations blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
 	
 	// Output
+	List<String> dataActionProjection;
 	List<String> scheduleWithLocks;
 	List<String> log;
 	Boolean result;
@@ -78,14 +81,17 @@ public class Scheduler2PL {
 		
 		this.scheduleWithLocks = new ArrayList<String>();
 		this.waitForGraph = new WaitForGraph();
+		this.precedenceGraph = new PrecedenceGraph();
 		this.blockedOperations = new BlockedOperations();
 		this.log = new ArrayList<String>();
 		this.result = true;
 		this.countOperationsSchedule = 0;
 		this.remainingSchedule = new ArrayList<String>(this.schedule);
+		this.dataActionProjection = new ArrayList<String>();
 	}
 	
 	public OutputBean check() throws InternalErrorException {
+		// check 2PL
 		try {
 			this.executeSchedule(this.schedule, false);
 			this.unlockAllObjects();
@@ -93,8 +99,19 @@ public class Scheduler2PL {
 			this.result = false;
 		}
 		
+		// compute DT(S)
+		this.computDataActionProjection();
+		
+		// build the precedence graph
+		this.buildPrecedenceGraph();
+		
 		// return the schedule and the log
-		OutputBean outputBean = new OutputBean(this.schedule, this.scheduleWithLocks, this.log, this.result);
+		OutputBean outputBean = new OutputBean(
+				this.schedule, 
+				this.scheduleWithLocks, 
+				this.log, 
+				this.result,
+				this.dataActionProjection);
 		return outputBean;
 	}
 
@@ -693,5 +710,50 @@ public class Scheduler2PL {
 		this.scheduleWithLocks.add(OperationUtils.createOperation(lock, transaction, object));
 	}
 
+	private void computDataActionProjection() {
+		if(!this.result) {
+			return;
+		}
+		for(String operation: this.scheduleWithLocks) {
+			Boolean isLock = OperationUtils.isLock(operation);
+			Boolean isUnlock = OperationUtils.isUnlock(operation);
+			if(isLock || isUnlock) {
+				continue;
+			}
+			this.dataActionProjection.add(operation);
+		}
+		
+		// check if DT(S)=S
+		String schedule = String.join(" ", this.schedule);
+		String dataAcionProjectionSchedule = String.join(" ", this.dataActionProjection);
+		if(!schedule.equals(dataAcionProjectionSchedule)) {
+			this.result = false;
+		}
+	}
 	
+	private void buildPrecedenceGraph() {
+		if(!this.result) {
+			return;
+		}
+		for(int i=0; i<this.dataActionProjection.size()-1; i++) {
+			String operationI = this.schedule.get(i);
+			if(OperationUtils.isCommit(operationI)) {
+				continue;
+			}
+			String objectI = OperationUtils.getObjectName(operationI);
+			Boolean isWriteI = OperationUtils.isWrite(operationI);
+			for(int j=i+1; j<this.dataActionProjection.size(); j++) {
+				String operationJ = this.schedule.get(j);
+				if(OperationUtils.isCommit(operationJ)) {
+					continue;
+				}
+				String objectJ = OperationUtils.getObjectName(operationJ);
+				Boolean isWriteJ = OperationUtils.isWrite(operationJ);
+				// if they are conflicting actions, the add an edge to the precedence graph
+				if(objectI.equals(objectJ) && (isWriteI || isWriteJ)) {
+					this.precedenceGraph.addEdge(operationI, operationJ);
+				}
+			}
+		}
+	}
 }

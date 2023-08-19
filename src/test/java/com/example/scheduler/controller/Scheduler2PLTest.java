@@ -23,7 +23,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -33,7 +33,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -43,7 +43,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -53,7 +53,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -63,7 +63,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -73,7 +73,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -83,7 +83,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -93,7 +93,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -103,7 +103,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -123,7 +123,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -133,7 +133,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -143,7 +143,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -153,7 +153,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -163,7 +163,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -173,7 +173,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -183,7 +183,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -193,7 +193,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}	
 	
 	@Test
@@ -213,7 +213,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -223,7 +223,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -233,7 +233,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -243,7 +243,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -253,7 +253,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -263,7 +263,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -273,7 +273,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -283,7 +283,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -293,7 +293,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -303,7 +303,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -343,7 +343,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -353,7 +353,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -363,7 +363,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -373,7 +373,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -383,7 +383,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -393,7 +393,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -403,7 +403,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -413,7 +413,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -423,7 +423,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -433,7 +433,27 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
+	}
+	
+	@Test
+	public void checkUnableToAnticipateLockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(x) w3(y) w1(y)";
+		String outputSchedule = "xl1(x) w1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
+	}
+	
+	@Test
+	public void checkUnableToAnticipate2LockAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(x) r3(y) w1(y)";
+		String outputSchedule = "xl1(x) w1(x)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test
@@ -443,7 +463,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && oB.getResult());
 	}
 	
 	@Test
@@ -453,7 +473,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule));
+		assertTrue(oB.getSchedleWithLocks().equals(outputSchedule) && !oB.getResult());
 	}
 	
 	@Test

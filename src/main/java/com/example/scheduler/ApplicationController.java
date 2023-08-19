@@ -57,6 +57,7 @@ public class ApplicationController {
 				model.addAttribute("log", oB.getLog());
 				model.addAttribute("result2PL", oB.getResult());
 				model.addAttribute("transactionsWithLocks", oB.getTransactionsWithLocks());
+				model.addAttribute("dataActionProjection", oB.getDataActionProjection());
 				
 			} catch (InputBeanException | InternalErrorException e) {
 				model.addAttribute("error", e.getMessage());

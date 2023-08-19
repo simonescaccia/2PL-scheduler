@@ -9,6 +9,7 @@ import com.example.scheduler.exception.InternalErrorException;
 
 public class OutputBean {
 	String scheduleWithLocks;			// Output schedule
+	String dataActionProjection;
 	List<String> log;					// Description of the computation
 	Boolean result;						// Define if the schedule follows the 2PL protocol
 	
@@ -19,13 +20,15 @@ public class OutputBean {
 			List<String> schedule,
 			List<String> scheduleWithLocks, 
 			List<String> log, 
-			Boolean result) 
+			Boolean result, 
+			List<String> dataActionProjection) 
 					throws InternalErrorException {
 		this.log = log;
 		this.result = result;
 		this.setTransactionsWithLocks(scheduleWithLocks);
 		this.setTransactions(schedule);
 		this.formatScheduleWithLocks(scheduleWithLocks);
+		this.setDataActionProjection(dataActionProjection);
 	}
 
 	public String getSchedleWithLocks() {
@@ -46,6 +49,10 @@ public class OutputBean {
 	
 	public HashMap<String, String> getTransactions(){
 		return this.transactions;
+	}
+	
+	public String getDataActionProjection() {
+		return this.dataActionProjection;
 	}
 	
 	private void formatScheduleWithLocks(List<String> scheduleWithLocks) {
@@ -125,5 +132,14 @@ public class OutputBean {
 	private void setTransactions(List<String> schedule) {
 		HashMap<String, List<String>> transactions = this.splitScheduleIntoTransaction(schedule);
 		this.transactions = this.transactionScheduleToList(transactions);
+	}
+	
+
+	private void setDataActionProjection(List<String> dataActionProjection) {
+		if(dataActionProjection.size() == 0) {
+			this.dataActionProjection = "";		
+		} else {
+			this.dataActionProjection = String.join(" ", dataActionProjection);
+		}
 	}
 }
