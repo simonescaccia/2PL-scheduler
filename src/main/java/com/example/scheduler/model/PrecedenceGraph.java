@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.example.scheduler.controller.OperationUtils;
 import com.example.scheduler.exception.InternalErrorException;
 
 public class PrecedenceGraph {
@@ -30,7 +31,36 @@ public class PrecedenceGraph {
 		}
 	}
 
+	public void build(List<String> schedule) {
+		for(int i=0; i<schedule.size()-1; i++) {
+			String operationI = schedule.get(i);
+			String transactionI = OperationUtils.getTransactionNumber(operationI);
+			this.addNode(transactionI);
+			if(OperationUtils.isCommit(operationI)) {
+				continue;
+			}
+			String objectI = OperationUtils.getObjectName(operationI);
+			Boolean isWriteI = OperationUtils.isWrite(operationI);
+			for(int j=i+1; j<schedule.size(); j++) {
+				String operationJ = schedule.get(j);
+				String transactionJ = OperationUtils.getTransactionNumber(operationJ);
+				if(OperationUtils.isCommit(operationJ)) {
+					continue;
+				}
+				String objectJ = OperationUtils.getObjectName(operationJ);
+				Boolean isWriteJ = OperationUtils.isWrite(operationJ);
+				// if they are conflicting actions, the add an edge to the precedence graph
+				if(!transactionI.equals(transactionJ) && objectI.equals(objectJ) && (isWriteI || isWriteJ)) {
+					this.addEdge(operationI, operationJ);
+				}
+			}
+		}
+		// add last operation's transaction
+		this.addNode(OperationUtils.getTransactionNumber(schedule.get(schedule.size()-1)));
+	}
+	
 	public List<String> getTopologicalOrder() throws InternalErrorException {
+		System.out.printf("this.adjacencyList %s", this.adjacencyList);
 		List<String> topologicalOrder = new ArrayList<String>();
 		HashMap<String, List<String>> adjacencyListCopy = new HashMap<String, List<String>>(this.adjacencyList);
 		while(adjacencyListCopy.keySet().size()>0) {

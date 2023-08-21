@@ -101,10 +101,10 @@ public class Scheduler2PL {
 			this.result = false;
 		}
 		
+		// compute DT(S)
+		this.computDataActionProjection();
+		
 		if(this.result) {
-			// compute DT(S)
-			this.computDataActionProjection();
-			
 			// build the precedence graph
 			this.buildPrecedenceGraph();
 			
@@ -113,14 +113,14 @@ public class Scheduler2PL {
 		}
 		
 		// return the schedule and the log
-		OutputBean outputBean = new OutputBean(
+		OutputBean oB = new OutputBean(
 				this.schedule, 
 				this.scheduleWithLocks, 
 				this.log, 
 				this.result,
 				this.dataActionProjection,
 				this.topologicalOrder);
-		return outputBean;
+		return oB;
 	}
 
 	/**
@@ -719,6 +719,9 @@ public class Scheduler2PL {
 	}
 
 	private void computDataActionProjection() {
+		if(!this.result) {
+			return;
+		}
 		for(String operation: this.scheduleWithLocks) {
 			Boolean isLock = OperationUtils.isLock(operation);
 			Boolean isUnlock = OperationUtils.isUnlock(operation);
@@ -737,27 +740,7 @@ public class Scheduler2PL {
 	}
 	
 	private void buildPrecedenceGraph() {
-		for(int i=0; i<this.dataActionProjection.size()-1; i++) {
-			String operationI = this.schedule.get(i);
-			this.precedenceGraph.addNode(OperationUtils.getTransactionNumber(operationI));
-			if(OperationUtils.isCommit(operationI)) {
-				continue;
-			}
-			String objectI = OperationUtils.getObjectName(operationI);
-			Boolean isWriteI = OperationUtils.isWrite(operationI);
-			for(int j=i+1; j<this.dataActionProjection.size(); j++) {
-				String operationJ = this.schedule.get(j);
-				if(OperationUtils.isCommit(operationJ)) {
-					continue;
-				}
-				String objectJ = OperationUtils.getObjectName(operationJ);
-				Boolean isWriteJ = OperationUtils.isWrite(operationJ);
-				// if they are conflicting actions, the add an edge to the precedence graph
-				if(objectI.equals(objectJ) && (isWriteI || isWriteJ)) {
-					this.precedenceGraph.addEdge(operationI, operationJ);
-				}
-			}
-		}
+		this.precedenceGraph.build(this.dataActionProjection);
 	}
 
 	private void computeTopologicalOrder() throws InternalErrorException {

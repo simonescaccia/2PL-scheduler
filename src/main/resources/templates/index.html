@@ -70,7 +70,7 @@
 					<td th:text="${logRow}"/>
 				</tr>
 			</table><br>
-			<div th:if="${error == ''}">
+			<div th:if="${result2PL == true}">
 				<p th:text="'DT(S): ' + ${dataActionProjection}" />
 				<p th:text="'Topological order: ' + ${topologicalOrder}" />
 			</div>
