@@ -51,7 +51,7 @@ public class PrecedenceGraph {
 				Boolean isWriteJ = OperationUtils.isWrite(operationJ);
 				// if they are conflicting actions, the add an edge to the precedence graph
 				if(!transactionI.equals(transactionJ) && objectI.equals(objectJ) && (isWriteI || isWriteJ)) {
-					this.addEdge(operationI, operationJ);
+					this.addEdge(transactionI, transactionJ);
 				}
 			}
 		}
@@ -60,7 +60,6 @@ public class PrecedenceGraph {
 	}
 	
 	public List<String> getTopologicalOrder() throws InternalErrorException {
-		System.out.printf("this.adjacencyList %s", this.adjacencyList);
 		List<String> topologicalOrder = new ArrayList<String>();
 		HashMap<String, List<String>> adjacencyListCopy = new HashMap<String, List<String>>(this.adjacencyList);
 		while(adjacencyListCopy.keySet().size()>0) {

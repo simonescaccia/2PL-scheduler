@@ -5,19 +5,57 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
-	h1 { 
-	    display: inline-block;
-	}
-	h3 { 
-	    display: inline-block;
-	    padding-left: 0.5em;
-	}
+		h1 { 
+		    display: inline-block;
+		}
+		
+		h3 { 
+		    display: inline-block;
+		    padding-left: 0.5em;
+		}
+		
+		th.tests, td.tests {
+			padding-left: 0.5em;
+			padding-right: 0.5em;
+		}
+		
+		.tooltip {
+		  position: relative;
+		  display: inline-block;
+		  border-bottom: 1px dotted black;
+		}
+		
+		.tooltip .tooltiptext {
+		  visibility: hidden;
+		  width: 400px;
+		  background-color: black;
+		  color: #fff;
+		  text-align: center;
+		  border-radius: 6px;
+		  padding: 5px 0;
+		  
+		  /* Position the tooltip */
+		  position: absolute;
+		  z-index: 1;
+		  top: -5px;
+		  left: 105%;
+		}
+		
+		.tooltip:hover .tooltiptext {
+		  visibility: visible;
+		}
 	</style>
 </head>
 <body>
 	<h1>2PL scheduler</h1><h3>by <a href="https://github.com/simonescaccia">Simone Scaccia</a></h3>
 	<form action="/">
-		<label>Insert the schedule</label><br>
+		<label>Insert the schedule <i class="fa fa-info-circle tooltip" aria-hidden="true"  style="font-size:1em;">
+			<span class="tooltiptext">
+				Operations allowed: r1(x), w1(x), c1<br>
+				Transaction name: 1, 23, 456, ...<br>
+				Object name: x, X, object, x1, x23, ...
+			</span>
+		</i></label><br>
 		<input type="text" id="schedule" name="schedule" style="width: 99%;" th:value="${schedule}"><br><br>  
 		
 		<input type="checkbox" id="lockAnticipation" name="lockAnticipation" value="True" 
@@ -61,7 +99,11 @@
 						<span th:text="' ' + ${operation}"></span>
 					</td>
 				</tr>
-			</table><br>
+			</table>
+			<div th:if="${result2PL == true}">
+				<p th:text="'DT(S): ' + ${dataActionProjection}" />
+				<p th:text="'Topological order: ' + ${topologicalOrder}" />
+			</div>
 			<table>
 				<tr>
 					<td>Log:</td>
@@ -70,11 +112,32 @@
 					<td th:text="${logRow}"/>
 				</tr>
 			</table><br>
-			<div th:if="${result2PL == true}">
-				<p th:text="'DT(S): ' + ${dataActionProjection}" />
-				<p th:text="'Topological order: ' + ${topologicalOrder}" />
-			</div>
 		</div>
-	</div> 
+	</div>
+	<div>
+		<h2>Tests</h2>
+		<table>
+			<tr>
+				<th class="tests">Description</th>
+				<th class="tests">Schedule</th>
+				<th class="tests">Lock Anticipation</th>
+				<th class="tests">Shared Lock</th>
+				<th class="tests">2PL</th>
+			</tr>
+			<tr th:each="test: ${tests}">
+				<td th:text="${test.description}" class="tests"/>
+				<td th:text="${test.schedule}" class="tests"/>
+				
+				<td th:if="${test.isLockAnticipation == true}" th:text="Yes" class="tests"/>
+				<td th:if="${test.isLockAnticipation == false}" th:text="No" class="tests"/>
+				
+				<td th:if="${test.isLockShared == true}" th:text="Yes" class="tests"/>
+				<td th:if="${test.isLockShared == false}" th:text="No" class="tests"/>
+
+				<td th:if="${test.is2PL == true}" class="tests"><i class="fa fa-circle" aria-hidden="true"  style="font-size:1em;color:green;"></i></td>
+				<td th:if="${test.is2PL == false}" class="tests"><i class="fa fa-circle" aria-hidden="true"  style="font-size:1em;color:red;"></i></td>				
+			</tr>
+		</table>
+	</div>
 </body>
 </html>

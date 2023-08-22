@@ -111,7 +111,7 @@ public class Scheduler2PL {
 			// compute the topological order
 			this.computeTopologicalOrder();
 		}
-		
+
 		// return the schedule and the log
 		OutputBean oB = new OutputBean(
 				this.schedule, 
@@ -415,9 +415,9 @@ public class Scheduler2PL {
 					if(!this.isLockShared) {
 						if(!otherTransactionFirstOperation.equals("")) {
 							this.log.add(String.format(errorMessage,
-									operation,
-									object,
-									transaction,
+									lockOperation,
+									requiredLocksToUnlockObject.getObjectToUnlock(),
+									requiredLocksToUnlockObject.getTransactionToUnlock(),
 									transactionOperation,
 									otherTransactionFirstOperation));
 							throw new LockAnticipationException();
@@ -425,17 +425,17 @@ public class Scheduler2PL {
 					} else {
 						if(isOtherTransactionsOperationWrite) {
 							this.log.add(String.format(errorMessage, 
-											operation,
-											object,
-											transaction,
+											lockOperation,
+											requiredLocksToUnlockObject.getObjectToUnlock(),
+											requiredLocksToUnlockObject.getTransactionToUnlock(),
 											transactionOperation,
 											otherTransactionFirstWrite));
 							throw new LockAnticipationException();
 						} else if(isTransactionOperationWrite && !otherTransactionFirstRead.equals("")) {
 							this.log.add(String.format(errorMessage, 
-											operation,
-											object,
-											transaction,
+											lockOperation,
+											requiredLocksToUnlockObject.getObjectToUnlock(),
+											requiredLocksToUnlockObject.getTransactionToUnlock(),
 											transactionOperation,
 											otherTransactionFirstRead));
 							throw new LockAnticipationException();
@@ -719,9 +719,6 @@ public class Scheduler2PL {
 	}
 
 	private void computDataActionProjection() {
-		if(!this.result) {
-			return;
-		}
 		for(String operation: this.scheduleWithLocks) {
 			Boolean isLock = OperationUtils.isLock(operation);
 			Boolean isUnlock = OperationUtils.isUnlock(operation);
@@ -734,7 +731,7 @@ public class Scheduler2PL {
 		// check if DT(S)=S
 		String schedule = String.join(" ", this.schedule);
 		String dataAcionProjectionSchedule = String.join(" ", this.dataActionProjection);
-		if(!schedule.equals(dataAcionProjectionSchedule)) {
+		if(!schedule.equals(dataAcionProjectionSchedule) && this.result) {
 			this.result = false;
 		}
 	}

@@ -13,6 +13,7 @@ import com.example.scheduler.exception.InputBeanException;
 import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.view.InputBean;
 import com.example.scheduler.view.OutputBean;
+import com.example.scheduler.view.TestsDescription;
 
 @Controller
 public class ApplicationController {
@@ -37,6 +38,7 @@ public class ApplicationController {
 		}
 		model.addAttribute("lockAnticipation", lockAnticipation);
 		model.addAttribute("lockType", lockType);
+		model.addAttribute("tests", TestsDescription.getTests());
 		
 		if (!check_schedule.equals("True") || schedule.equals("")) {
 			model.addAttribute("result", "False");
@@ -44,6 +46,7 @@ public class ApplicationController {
 			// Show the result tab
 			model.addAttribute("result", "True");
 			model.addAttribute("error", "");
+			// Show the tests tab
 			
 			try {
 				// Check the input

@@ -189,7 +189,7 @@ public class Scheduler2PLTest {
 	public void checkLockUpgradeMoreSharedLocksNoAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x) w1(x)";
 		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u2(x) xl1(x) w1(x) u1(x)";
-		String serialSchedule = "T1 T2";
+		String serialSchedule = "T2 T1";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
@@ -442,7 +442,7 @@ public class Scheduler2PLTest {
 	public void checkLockUpgradeMoreSharedLocksAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x) w1(x)";
 		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u2(x) xl1(x) w1(x) u1(x)";
-		String serialSchedule = "T1 T2";
+		String serialSchedule = "T2 T1";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
@@ -553,6 +553,17 @@ public class Scheduler2PLTest {
 		String schedule = "r1(x) w2(y) w2(x) r1(y) w1(x) c1 c2";
 		String outputSchedule = "sl1(x) r1(x) xl2(y) w2(y)";
 		String dataActionProjection = "r1(x) w2(y)";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+	}
+	
+	@Test
+	public void checkUnableToAnticipateLockExamAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(Z) r2(X) w3(X) r3(Y) w4(Y) w4(X) r2(Y) r1(Y) w2(Z)";
+		String outputSchedule = "xl1(Z) w1(Z) sl2(X) r2(X)";
+		String dataActionProjection = "w1(Z) r2(X)";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
