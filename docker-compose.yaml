@@ -1,0 +1,9 @@
+version: '3.9'
+
+services:
+  2pl-scheduler:
+    image: 2pl-scheduler
+    build: .
+    container_name: 2pl-scheduler
+    ports:
+    - 8080:8080

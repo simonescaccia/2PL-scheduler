@@ -17,7 +17,14 @@
 		th.tests, td.tests {
 			padding-left: 0.5em;
 			padding-right: 0.5em;
+			border: 1px solid black;
+  			border-collapse: collapse;
 		}
+		
+		table.tests {
+			border: 1px solid black;
+	  		border-collapse: collapse;
+  		}
 		
 		.tooltip {
 		  position: relative;
@@ -51,9 +58,10 @@
 	<form action="/">
 		<label>Insert the schedule <i class="fa fa-info-circle tooltip" aria-hidden="true"  style="font-size:1em;">
 			<span class="tooltiptext">
-				Operations allowed: r1(x), w1(x), c1<br>
+				Operations allowed: read, write, commit<br>
 				Transaction name: 1, 23, 456, ...<br>
-				Object name: x, X, object, x1, x23, ...
+				Object name: x, X, object, x1, x23, ...<br>
+				Example: r1(x) w12(object) c123
 			</span>
 		</i></label><br>
 		<input type="text" id="schedule" name="schedule" style="width: 99%;" th:value="${schedule}"><br><br>  

@@ -15,7 +15,7 @@ public class Scheduler2PLTest {
 	String lockAnticipation = "True";
 	String exclusiveLockType = "xl";
 	String sharedLockType = "sl";
-	String emptyDataActionProjection = "";
+	String emptySerialSchedule = "";
 		
 	private boolean getAssertion(
 			OutputBean oB, 
@@ -94,7 +94,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -105,7 +105,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -116,7 +116,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -127,7 +127,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -138,7 +138,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -204,7 +204,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -215,7 +215,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -226,7 +226,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}	
 	
 	@Test
@@ -237,7 +237,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -303,7 +303,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -314,7 +314,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -325,7 +325,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -358,7 +358,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -369,7 +369,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -380,7 +380,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -457,7 +457,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -468,7 +468,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -501,7 +501,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -512,7 +512,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -534,7 +534,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -545,7 +545,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -556,7 +556,7 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
 	}
 	
 	@Test
@@ -567,7 +567,18 @@ public class Scheduler2PLTest {
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
 		OutputBean oB = s2PL.check();
-		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptyDataActionProjection));
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
+	}
+	
+	@Test
+	public void checkAbleToAnticipateLockExamAnticipationShared() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(Z) r2(X) w3(X) r3(Y) w4(X) r2(Y) r1(Y) w2(Z)";
+		String outputSchedule = "xl1(Z) w1(Z) sl2(X) r2(X) sl2(Y) sl1(Y) u1(Z) xl2(Z) u2(X) xl3(X) w3(X) sl3(Y) r3(Y) u3(X) xl4(X) w4(X) r2(Y) r1(Y) w2(Z) u4(X) u2(Y) u1(Y) u3(Y) u2(Z)";
+		String serialSchedule = "T1 T2 T3 T4";
+		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(this.getAssertion(oB, true, schedule, outputSchedule, schedule, serialSchedule));
 	}
 
 }

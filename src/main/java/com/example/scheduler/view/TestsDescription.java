@@ -24,6 +24,7 @@ public class TestsDescription {
 		tests.add(new EntryDescription("r2(x) r1(x) w2(x) w1(y)", true, true, true, "checkAnticipateLockWithUpgradeAnticipationShared"));
 		tests.add(new EntryDescription("r1(x) w2(y) w2(x) r1(y) w1(x) c1 c2", true, true, false, "checkBlockAndLockAnticipationDeadlockAnticipationShared"));
 		tests.add(new EntryDescription("w1(Z) r2(X) w3(X) r3(Y) w4(Y) w4(X) r2(Y) r1(Y) w2(Z)", true, true, false, "checkUnableToAnticipateLockExamAnticipationShared"));		
+		tests.add(new EntryDescription("w1(Z) r2(X) w3(X) r3(Y) w4(X) r2(Y) r1(Y) w2(Z)", true, true, true, "checkAbleToAnticipateLockExamAnticipationShared"));		
 
 		return tests;
 }
