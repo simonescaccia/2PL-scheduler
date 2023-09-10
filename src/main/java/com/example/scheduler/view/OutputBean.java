@@ -13,6 +13,7 @@ public class OutputBean {
 	String topologicalOrder;
 	List<String> log;					// Description of the computation
 	Boolean result;						// Define if the schedule follows the 2PL protocol
+	Boolean check2PL;
 	
 	HashMap<String, String> transactionsWithLocks = new HashMap<String, String>();
 	HashMap<String, String> transactions = new HashMap<String, String>();
@@ -23,10 +24,12 @@ public class OutputBean {
 			List<String> log, 
 			Boolean result, 
 			List<String> dataActionProjection, 
-			List<String> topologicalOrder) 
+			List<String> topologicalOrder, 
+			Boolean check2PL) 
 					throws InternalErrorException {
 		this.log = log;
 		this.result = result;
+		this.check2PL = check2PL;
 		this.setTransactionsWithLocks(scheduleWithLocks);
 		this.setTransactions(schedule);
 		this.formatScheduleWithLocks(scheduleWithLocks);
@@ -101,15 +104,25 @@ public class OutputBean {
 	private void setTransactionsWithLocks(List<String> scheduleWithLocks) throws InternalErrorException {
 		HashMap<String, List<String>> transactionsWithLocks = this.splitScheduleIntoTransaction(scheduleWithLocks);
 
-		// check 2PL
+		// join lists to set string schedules
+		this.transactionsWithLocks = this.transactionScheduleToList(transactionsWithLocks);
+
+		if(!check2PL) {
+			return;
+		}
+		
+		// check 2PL legal operations
 		HashMap<String, List<String>> unlocks = new HashMap<String, List<String>>();
+		HashMap<String, List<String>> locks = new HashMap<String, List<String>>();
 		for(String transaction: transactionsWithLocks.keySet()) {
 			Boolean transactionShrinkingPhase = false;
 			unlocks.put(transaction, new ArrayList<String>());
+			locks.put(transaction, new ArrayList<String>());
 			for(String operation: transactionsWithLocks.get(transaction)) {
+				
 				if(OperationUtils.isUnlock(operation)) {
 					transactionShrinkingPhase = true;
-					if(unlocks.get(transaction).contains(operation)) {
+					if(unlocks.get(transaction).contains(OperationUtils.getObjectName(operation))) {
 						// already unlocked this object
 						throw new InternalErrorException(
 								String.format("Internal error, output transaction %s doesn't follows the 2PL protocol, duplicated unlocks: %s. ",
@@ -118,12 +131,31 @@ public class OutputBean {
 								+ "Log: "
 								+ String.join(". ", this.log));
 					}
-					unlocks.get(transaction).add(operation);
+					unlocks.get(transaction).add(OperationUtils.getObjectName(operation));
 					continue;
 				}
-				if(OperationUtils.isLock(operation) && transactionShrinkingPhase) {
+				if(OperationUtils.isLock(operation)) {
+					if(!locks.get(transaction).contains(OperationUtils.getObjectName(operation))) {
+						locks.get(transaction).add(OperationUtils.getObjectName(operation));
+					}
+					if(transactionShrinkingPhase) {
+						throw new InternalErrorException(
+								String.format("Internal error, output transaction %s doesn't follows the 2PL protocol: %s. ",
+										transaction,
+										String.join(" ", transactionsWithLocks.get(transaction)))
+								+ "Log: "
+								+ String.join(". ", this.log));
+					}
+				}
+			}
+		}
+		
+		// check 2PL well formed
+		for(String transaction: locks.keySet()) {
+			for(String object: locks.get(transaction)) {
+				if(!unlocks.get(transaction).contains(object)) {
 					throw new InternalErrorException(
-							String.format("Internal error, output transaction %s doesn't follows the 2PL protocol: %s. ",
+							String.format("Internal error, output transaction %s doesn't follows the 2PL protocol: missing unlock: %s. ",
 									transaction,
 									String.join(" ", transactionsWithLocks.get(transaction)))
 							+ "Log: "
@@ -131,9 +163,6 @@ public class OutputBean {
 				}
 			}
 		}
-		
-		// join lists to set string schedules
-		this.transactionsWithLocks = this.transactionScheduleToList(transactionsWithLocks);
 	}
 	
 	private void setTransactions(List<String> schedule) {

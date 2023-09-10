@@ -67,7 +67,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkReadCommitNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) c1";
-		String outputSchedule = "l1(x) r1(x) c1 u1(x)";
+		String outputSchedule = "l1(x) r1(x) u1(x) c1";
 		String serialSchedule = "T1";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -100,7 +100,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2MoreTimesNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r1(y) r2(x) r2(y) w1(x) w1(y)";
-		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) w1(y) u1(y) l2(y) r2(y) u2(x) u2(y)";
+		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) w1(y) u1(y) l2(y) r2(y) u2(y) u2(x)";
 		String dataActionProjection = "r1(x) r1(y) w1(x) r2(x) w1(y) r2(y)";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -111,7 +111,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2DelayResumeNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x) r1(y) w1(x) c1 c2";
-		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) c1 c2 u2(x) u1(y)";
+		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) u1(y) w1(x) u1(x) l2(x) r2(x) u2(x) c1 c2";
 		String dataActionProjection = "r1(x) r1(y) w1(x) r2(x) c1 c2";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -177,7 +177,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkRead1Read2NoAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x)";
-		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u1(x) u2(x)";
+		String outputSchedule = "sl1(x) r1(x) u1(x) sl2(x) r2(x) u2(x)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -210,7 +210,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2MoreTimesNoAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) w1(y) w2(x) w1(x) w2(y) r1(y)";
-		String outputSchedule = "sl1(x) r1(x) xl1(y) w1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) r1(y) u1(y) xl2(y) w2(y) u2(x) u2(y)";
+		String outputSchedule = "sl1(x) r1(x) xl1(y) w1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) r1(y) u1(y) xl2(y) w2(y) u2(y) u2(x)";
 		String dataActionProjection = "r1(x) w1(y) w1(x) w2(x) r1(y) w2(y)";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -221,7 +221,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2DelayResumeNoAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r1(y) w2(x) w1(x) w2(y) w1(y)";
-		String outputSchedule = "sl1(x) r1(x) sl1(y) r1(y) xl1(x) w1(x) xl1(y) w1(y) u1(x) xl2(x) w2(x) u1(y) xl2(y) w2(y) u2(x) u2(y)";		
+		String outputSchedule = "sl1(x) r1(x) sl1(y) r1(y) xl1(x) w1(x) xl1(y) w1(y) u1(y) u1(x) xl2(x) w2(x) xl2(y) w2(y) u2(y) u2(x)";		
 		String dataActionProjection = "r1(x) r1(y) w1(x) w1(y) w2(x) w2(y)";
 		InputBean iB = new InputBean(schedule, noLockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -276,7 +276,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkReadCommitAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) c1";
-		String outputSchedule = "l1(x) r1(x) c1 u1(x)";
+		String outputSchedule = "l1(x) r1(x) u1(x) c1";
 		String serialSchedule = "T1";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -309,7 +309,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2MoreTimesAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r1(y) r2(x) r2(y) w1(x) w1(y)";
-		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) w1(y) u1(y) l2(y) r2(y) u2(x) u2(y)";
+		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) w1(y) u1(y) l2(y) r2(y) u2(y) u2(x)";
 		String dataActionProjection = "r1(x) r1(y) w1(x) r2(x) w1(y) r2(y)";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -320,7 +320,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2DelayResumeAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x) r1(y) w1(x) c1 c2";
-		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) w1(x) u1(x) l2(x) r2(x) c1 c2 u2(x) u1(y)";
+		String outputSchedule = "l1(x) r1(x) l1(y) r1(y) u1(y) w1(x) u1(x) l2(x) r2(x) u2(x) c1 c2";
 		String dataActionProjection = "r1(x) r1(y) w1(x) r2(x) c1 c2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -331,7 +331,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkAnticipateLockAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "w1(x) w2(x) w1(y)";
-		String outputSchedule = "l1(x) w1(x) l1(y) u1(x) l2(x) w2(x) w1(y) u2(x) u1(y)";
+		String outputSchedule = "l1(x) w1(x) l1(y) u1(x) l2(x) w2(x) u2(x) w1(y) u1(y)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -342,7 +342,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkMultipleAnticipateLockAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "w1(x) w2(x) w1(y) w1(z)";
-		String outputSchedule = "l1(x) w1(x) l1(y) l1(z) u1(x) l2(x) w2(x) w1(y) w1(z) u2(x) u1(y) u1(z)";
+		String outputSchedule = "l1(x) w1(x) l1(y) l1(z) u1(x) l2(x) w2(x) u2(x) w1(y) u1(y) w1(z) u1(z)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, exclusiveLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -419,7 +419,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkReadCommitAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) c1";
-		String outputSchedule = "sl1(x) r1(x) c1 u1(x)";
+		String outputSchedule = "sl1(x) r1(x) u1(x) c1";
 		String serialSchedule = "T1";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -430,7 +430,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkRead1Read2AnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) r2(x)";
-		String outputSchedule = "sl1(x) r1(x) sl2(x) r2(x) u1(x) u2(x)";
+		String outputSchedule = "sl1(x) r1(x) u1(x) sl2(x) r2(x) u2(x)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -463,7 +463,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2MoreTimesAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) w1(y) w2(x) w1(x) w2(y) r1(y)";
-		String outputSchedule = "sl1(x) r1(x) xl1(y) w1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) r1(y) u1(y) xl2(y) w2(y) u2(x) u2(y)";
+		String outputSchedule = "sl1(x) r1(x) xl1(y) w1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) r1(y) u1(y) xl2(y) w2(y) u2(y) u2(x)";
 		String dataActionProjection = "r1(x) w1(y) w1(x) w2(x) r1(y) w2(y)";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -474,7 +474,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkAnticipateLockAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) w2(x) w1(y)";
-		String outputSchedule = "sl1(x) r1(x) xl1(y) u1(x) xl2(x) w2(x) w1(y) u2(x) u1(y)";
+		String outputSchedule = "sl1(x) r1(x) xl1(y) u1(x) xl2(x) w2(x) u2(x) w1(y) u1(y)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -485,7 +485,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkAnticipateLockWithUpgradeAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r2(x) r1(x) w2(x) w1(y)";
-		String outputSchedule = "sl2(x) r2(x) sl1(x) r1(x) xl1(y) u1(x) xl2(x) w2(x) w1(y) u2(x) u1(y)";
+		String outputSchedule = "sl2(x) r2(x) sl1(x) r1(x) xl1(y) u1(x) xl2(x) w2(x) u2(x) w1(y) u1(y)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -518,7 +518,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkMultipleAnticipateLockAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) w2(x) r1(y) w1(z)";
-		String outputSchedule = "sl1(x) r1(x) sl1(y) xl1(z) u1(x) xl2(x) w2(x) r1(y) w1(z) u2(x) u1(y) u1(z)";
+		String outputSchedule = "sl1(x) r1(x) sl1(y) xl1(z) u1(x) xl2(x) w2(x) u2(x) r1(y) u1(y) w1(z) u1(z)";
 		String serialSchedule = "T1 T2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -529,7 +529,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkBlock2DelayResumeAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "r1(x) w2(x) r1(y) w1(x) c1 c2";
-		String outputSchedule = "sl1(x) r1(x) sl1(y) r1(y) xl1(x) w1(x) u1(x) xl2(x) w2(x) c1 c2 u2(x) u1(y)";
+		String outputSchedule = "sl1(x) r1(x) sl1(y) r1(y) xl1(x) w1(x) u1(x) u1(y) xl2(x) w2(x) u2(x) c1 c2";
 		String dataActionProjection = "r1(x) r1(y) w1(x) w2(x) c1 c2";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
@@ -573,7 +573,7 @@ public class Scheduler2PLTest {
 	@Test
 	public void checkAbleToAnticipateLockExamAnticipationShared() throws InputBeanException, InternalErrorException {
 		String schedule = "w1(Z) r2(X) w3(X) r3(Y) w4(X) r2(Y) r1(Y) w2(Z)";
-		String outputSchedule = "xl1(Z) w1(Z) sl2(X) r2(X) sl2(Y) sl1(Y) u1(Z) xl2(Z) u2(X) xl3(X) w3(X) sl3(Y) r3(Y) u3(X) xl4(X) w4(X) r2(Y) r1(Y) w2(Z) u4(X) u2(Y) u1(Y) u3(Y) u2(Z)";
+		String outputSchedule = "xl1(Z) w1(Z) sl2(X) r2(X) sl2(Y) sl1(Y) u1(Z) xl2(Z) u2(X) xl3(X) w3(X) sl3(Y) r3(Y) u3(Y) u3(X) xl4(X) w4(X) u4(X) r2(Y) u2(Y) r1(Y) u1(Y) w2(Z) u2(Z)";
 		String serialSchedule = "T1 T2 T3 T4";
 		InputBean iB = new InputBean(schedule, lockAnticipation, sharedLockType);
 		Scheduler2PL s2PL = new Scheduler2PL(iB);
