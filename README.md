@@ -4,7 +4,9 @@
 
 ## Application description
 
-### Requirements
+This application aims to implement a Two-Phase Locking (2PL) scheduler for the Data Management project. It is built using Spring Boot and Maven for the backend, Thymeleaf for the front-end, and Docker for containerization.
+
+## Requirements
 
 - Check if the inserted schedule satisfies the assumptions (no two read/write on the same object for the same transaction, no rollbacks)
 - If the schedule is valid return the list of transactions with the list of operations for each transaction.
@@ -12,13 +14,13 @@
 - If the schedule is in the 2PL class, then return the schedule with locks and unlocks, else return a description of why it is not in the 2PL class.
 - Show conflict-serializability by precedence graph: Gen(2PL)=> DT(S) conflict serializable <=> P(S) is acyclic
 
-### Logic
+## Logic
 
-#### Lock Table
+### Lock Table
 
 Implementation
 
-#### 2PL without lock anticipation
+### 2PL without lock anticipation
 
 - To check if a schedule is in the 2PL class without lock anticipation, we may block a transaction and resume it later.
 - Wait-for-graph: if there is a cycle then there is a deadlock, so the schedule is not in the 2PL class. Adjacent list representation of the graph.

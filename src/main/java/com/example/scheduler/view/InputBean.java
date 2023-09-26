@@ -36,25 +36,29 @@ public class InputBean {
 						"Invalid operation: %s, index: %d"
 						, operation, index
 				)); 
+			}
+			String transactionNumber = OperationUtils.getTransactionNumber(operation);
+			if(isCommit && !this.transactions.containsKey(transactionNumber)) {
+				throw new InputBeanException(String.format(
+						"Nothing to commit, transaction: %s"
+						, transactionNumber
+				)); 
+			}	
+			if (!this.transactions.containsKey(transactionNumber)) {
+				// add the new transaction
+				List<String> transactionOperations = new ArrayList<String>();
+				transactionOperations.add(operation);
+				this.transactions.put(transactionNumber, transactionOperations);
 			} else {
-				
-				String transactionNumber = OperationUtils.getTransactionNumber(operation);
-				if (!this.transactions.containsKey(transactionNumber)) {
-					// add the new transaction
-					List<String> transactionOperations = new ArrayList<String>();
-					transactionOperations.add(operation);
-					this.transactions.put(transactionNumber, transactionOperations);
-				} else {
-					// check if the operation is legal
-					if (this.transactions.get(transactionNumber).contains(String.format("c%s", transactionNumber))) {
-						throw new InputBeanException(String.format(
-								"Invalid transaction %s: already committed, operation %s at index %d"
-								,transactionNumber, operation, index
-						)); 
-					}
-					// append operation
-					this.transactions.get(transactionNumber).add(operation);
+				// check if the operation is legal
+				if (this.transactions.get(transactionNumber).contains(String.format("c%s", transactionNumber))) {
+					throw new InputBeanException(String.format(
+							"Invalid transaction %s: already committed, operation %s at index %d"
+							,transactionNumber, operation, index
+					)); 
 				}
+				// append operation
+				this.transactions.get(transactionNumber).add(operation);
 			}			
 			index++;
 		}

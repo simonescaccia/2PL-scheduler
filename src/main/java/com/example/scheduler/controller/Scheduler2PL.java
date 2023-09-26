@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,7 +16,6 @@ import com.example.scheduler.exception.InternalErrorException;
 import com.example.scheduler.exception.LockAnticipationException;
 import com.example.scheduler.exception.TransactionBlockedException;
 import com.example.scheduler.model.BlockedOperations;
-import com.example.scheduler.model.PrecedenceGraph;
 import com.example.scheduler.model.RequiredLocksToUnlockObject;
 import com.example.scheduler.model.WaitForGraph;
 import com.example.scheduler.view.InputBean;
@@ -39,7 +39,6 @@ public class Scheduler2PL {
 	HashMap<String, SimpleEntry<List<String>, String>> lockTable;
 	HashMap<String, List<String>> requiredUnlocks;
 	WaitForGraph waitForGraph;
-	PrecedenceGraph precedenceGraph;
 	BlockedOperations blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
 	Boolean check2PL; // execute checks when filling the outputBean. Should be false if the schedule is not completed due to deadlocks 
 	
@@ -86,7 +85,6 @@ public class Scheduler2PL {
 		
 		this.scheduleWithLocks = new ArrayList<String>();
 		this.waitForGraph = new WaitForGraph();
-		this.precedenceGraph = new PrecedenceGraph();
 		this.blockedOperations = new BlockedOperations();
 		this.log = new ArrayList<String>();
 		this.result = true;
@@ -100,8 +98,8 @@ public class Scheduler2PL {
 	public OutputBean check() throws InternalErrorException {
 		// check 2PL
 		try {
-			this.executeSchedule(this.schedule, false);
-		} catch (DeadlockException | LockAnticipationException e) {
+			this.computeLockExtendedSchedule(this.schedule, false);
+		} catch (DeadlockException e) {
 			this.result = false;
 			this.check2PL = false;
 		}
@@ -109,12 +107,9 @@ public class Scheduler2PL {
 		// compute DT(S)
 		this.computDataActionProjection();
 		
-		if(this.result) {
-			// build the precedence graph
-			this.buildPrecedenceGraph();
-			
-			// compute the topological order
-			this.computeTopologicalOrder();
+		if(this.result) {		
+			// compute the serial conflict-equivalent schedule
+			this.computeSerialSchedule();
 		}
 
 		// return the schedule and the log
@@ -135,8 +130,8 @@ public class Scheduler2PL {
 	 * @throws InternalErrorException 
 	 * @throws LockAnticipationException 
 	 */
-	private void executeSchedule(List<String> schedule, Boolean areBlockedOperations) 
-			throws DeadlockException, InternalErrorException, LockAnticipationException {
+	private void computeLockExtendedSchedule(List<String> schedule, Boolean areBlockedOperations) 
+			throws DeadlockException, InternalErrorException {
 		logger.log(Level.INFO, String.format(""));
 		logger.log(Level.INFO, String.format("Executing schedule %s", schedule));
 		
@@ -159,9 +154,6 @@ public class Scheduler2PL {
 			} catch (DeadlockException e) {
 				logger.log(Level.INFO, "Deadlock");
 				throw new DeadlockException();
-			} catch (LockAnticipationException e) {
-				logger.log(Level.INFO, "Lock anticipation not possible");
-				throw new LockAnticipationException();
 			}
 			this.execute(operation);
 			
@@ -215,7 +207,7 @@ public class Scheduler2PL {
 					return;
 				}
 				this.requiredUnlocks.get(waitForTransaction).remove(object);
-			} catch (TransactionBlockedException | LockAnticipationException e) {}
+			} catch (TransactionBlockedException e) {}
 			logger.log(Level.INFO, String.format("Object %s unlocked", object));
 		}
 	}
@@ -249,7 +241,7 @@ public class Scheduler2PL {
 						// can't unlock the object
 						continue;
 					}
-				} catch (TransactionBlockedException | LockAnticipationException e) {}
+				} catch (TransactionBlockedException e) {}
 			}
 			
 			logger.log(Level.INFO, String.format("Resuming blocked transaction %s", blockedTransaction));
@@ -261,9 +253,7 @@ public class Scheduler2PL {
 					));
 			// unlock done, then remove the transaction form blocked transactions and execute it
 			List<String> blockedOperations = this.blockedOperations.removeBlockedTransaction(blockedTransaction);
-			try {
-				this.executeSchedule(blockedOperations, true);
-			} catch (LockAnticipationException e) {}
+			this.computeLockExtendedSchedule(blockedOperations, true);
 			// after resuming the first transaction the adjacencyList may changes, then we continue to resume transaction recursively  
 			break;
 		}
@@ -298,7 +288,7 @@ public class Scheduler2PL {
 	}
 	
 	private void lock(String operation) 
-			throws TransactionBlockedException, DeadlockException, InternalErrorException, LockAnticipationException {
+			throws TransactionBlockedException, DeadlockException, InternalErrorException {
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
 		// check if the transaction is blocked
@@ -323,13 +313,14 @@ public class Scheduler2PL {
 		UnableToUnlockExceptionCallback unableToUnlockCallback = new UnableToUnlockExceptionCallback() {
 			@Override
 			public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-					throws TransactionBlockedException, DeadlockException, LockAnticipationException, InternalErrorException {
+					throws TransactionBlockedException, DeadlockException, InternalErrorException {
 				// can't unlock the object
 				if(!Scheduler2PL.this.isLockAnticipation) {
 					Scheduler2PL.this.blockTransaction(
 							this.operation,
 							this.transactionLock);
 				} else {
+					try {
 					Scheduler2PL.this.anticipateLocks(
 							this.operation,
 							requiredLocksToUnlockObject);
@@ -339,6 +330,11 @@ public class Scheduler2PL {
 							this.transactionLock, 
 							requiredLocksToUnlockObject.getObjectToUnlock(), 
 							internalErrorCallback);
+					} catch (LockAnticipationException e) {
+						Scheduler2PL.this.blockTransaction(
+								this.operation,
+								this.transactionLock);
+					}
 				}
 			}	
 		};
@@ -516,7 +512,7 @@ public class Scheduler2PL {
 			String transactionLock, 
 			String objectName,  
 			UnableToUnlockExceptionCallback onExceptionCallback) 
-					throws TransactionBlockedException, DeadlockException, InternalErrorException, LockAnticipationException {
+					throws TransactionBlockedException, DeadlockException, InternalErrorException {
 		try {
 			this.unlock(transactionLock, objectName);
 		} catch (UnableToUnlockException e) {
@@ -529,7 +525,7 @@ public class Scheduler2PL {
 	private void unlockExclusiveLock(
 			String objectName, 
 			UnableToUnlockExceptionCallback callback
-			) throws InternalErrorException, TransactionBlockedException, DeadlockException, LockAnticipationException {
+			) throws InternalErrorException, TransactionBlockedException, DeadlockException {
 		// the object is already locked by another transaction through an exclusive lock, try to unlock
 		String exclusiveTransactionLock = this.lockTable.get(objectName).getValue();
 		if(exclusiveTransactionLock.equals("")) {
@@ -540,7 +536,8 @@ public class Scheduler2PL {
 
 	}
 	
-	private void unlockAllSharedLocks(String objectName, UnableToUnlockExceptionCallback callback) throws TransactionBlockedException, DeadlockException, InternalErrorException, LockAnticipationException {
+	private void unlockAllSharedLocks(String objectName, UnableToUnlockExceptionCallback callback) 
+			throws TransactionBlockedException, DeadlockException, InternalErrorException {
 		// unlock all the other shared locks
 		List<String> sharedLocks = new ArrayList<String>(this.lockTable.get(objectName).getKey());
 		for(String transactionWithSharedLock: sharedLocks) {
@@ -791,12 +788,16 @@ public class Scheduler2PL {
 			this.result = false;
 		}
 	}
-	
-	private void buildPrecedenceGraph() {
-		this.precedenceGraph.build(this.dataActionProjection);
-	}
 
-	private void computeTopologicalOrder() throws InternalErrorException {
-		this.topologicalOrder = this.precedenceGraph.getTopologicalOrder();
+	private void computeSerialSchedule() {
+		Set<String> remainingTransactions = this.transactions.keySet();
+		for(String operation: this.scheduleWithLocks) {
+			String transaction = OperationUtils.getTransactionNumber(operation);
+			if(OperationUtils.isUnlock(operation) && remainingTransactions.contains(transaction)) {
+				// get transaction order as the unlock order
+				remainingTransactions.remove(transaction);
+				this.topologicalOrder.add("T" + transaction);
+			}
+		}
 	}
 }

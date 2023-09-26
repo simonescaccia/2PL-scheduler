@@ -22,5 +22,5 @@ public abstract class UnableToUnlockExceptionCallback {
 	}
 	
 	public abstract void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-			throws InternalErrorException, TransactionBlockedException, DeadlockException, LockAnticipationException;
+			throws InternalErrorException, TransactionBlockedException, DeadlockException;
 }
