@@ -188,9 +188,7 @@ public class Scheduler2PL {
 		String waitForTransaction = OperationUtils.getTransactionNumber(operation);
 		List<String> objectsToUnlock = new ArrayList<String>();
 		objectsToUnlock.add(objectOperation); // insert at the first position the operation object
-		logger.log(Level.INFO, String.format("Objects to unlock %s", objectsToUnlock));
-		objectsToUnlock.addAll(this.requiredUnlocks.get(waitForTransaction));
-		logger.log(Level.INFO, String.format("Objects to unlock %s", objectsToUnlock));
+		objectsToUnlock.addAll(this.requiredUnlocks.get(waitForTransaction));;
 		objectsToUnlock.remove(objectsToUnlock.lastIndexOf(objectOperation)); // remove the duplicate object
 		logger.log(Level.INFO, String.format("Objects to unlock %s", objectsToUnlock));
 		for(String object: objectsToUnlock) {

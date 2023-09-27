@@ -1,6 +1,8 @@
 package com.example.scheduler.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -14,18 +16,43 @@ public class WaitForGraph {
 		this.adjacencyList = new HashMap<String, Entry<String, String>>();
 	}
 	
-	public void addEdge(String sourceTransaction, String destinationTransaction, String conflictingObject) throws DeadlockException {
+	public void addEdge(String sourceTransaction, String destinationTransaction, String conflictingObject) 
+			throws DeadlockException {
+		this.checkCycles(sourceTransaction, destinationTransaction);
+		
 		// create a new entry representing the edge
 		Entry<String, String> newEdge = Map.entry(destinationTransaction, conflictingObject);
 		// add the edge to the adjacency list
 		this.adjacencyList.put(sourceTransaction, newEdge);
+	}
+
+	// T2->T1, T3->T2, T1->T3
+	private void checkCycles(String sourceTransaction, String destinationTransaction) 
+			throws DeadlockException {
+		String waitForTransaction = destinationTransaction;
+		List<String> waitForCycle = new ArrayList<String>();
+		waitForCycle.add(sourceTransaction);
+		waitForCycle.add(destinationTransaction);
 		
-		if(this.adjacencyList.containsKey(destinationTransaction)) {
-			throw new DeadlockException(String.format("Deadlock detected, caused by transaction %s on transaction %s", 
-					sourceTransaction, destinationTransaction));
+		while(waitForTransaction != null) {
+			if(this.adjacencyList.containsKey(waitForTransaction)) {
+				waitForTransaction = this.adjacencyList.get(waitForTransaction).getKey();
+				waitForCycle.add(waitForTransaction);
+				if(waitForTransaction.equals(sourceTransaction)) { 
+					throw new DeadlockException(
+							String.format("Deadlock detected, the Wait-For-Graph contains the following cycle %s", 
+							this.formatCycle(waitForCycle)));
+				}
+			} else {
+				waitForTransaction = null;
+			}
 		}
 	}
-	
+
+	private Object formatCycle(List<String> waitForCycle) {
+		return "T" + String.join(" T", waitForCycle);
+	}
+
 	public HashMap<String, Entry<String, String>> getAdjacencyList() {
 		return this.adjacencyList;
 	}

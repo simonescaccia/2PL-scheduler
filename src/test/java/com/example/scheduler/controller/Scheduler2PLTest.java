@@ -120,6 +120,28 @@ public class Scheduler2PLTest {
 	}
 	
 	@Test
+	public void checkBlockMultipleTransactionChainNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(z) w2(x) w3(z) w1(y)";
+		String outputSchedule = "l1(x) w1(x) l2(z) w2(z) l1(y) w1(y) u1(y) u1(x) l2(x) w2(x) u2(x) u2(z) l3(z) w3(z) u3(z)";
+		String dataActionProjection = "w1(x) w2(z) w1(y) w2(x) w3(z)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
+	}
+	
+	@Test
+	public void checkDeadlockMultipleTransactionsNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
+		String schedule = "w1(x) w2(z) w2(x) w3(y) w3(z) w1(y)";
+		String outputSchedule = "l1(x) w1(x) l2(z) w2(z) l3(y) w3(y)";
+		String dataActionProjection = "w1(x) w2(z) w3(y)";
+		InputBean iB = new InputBean(schedule, noLockAnticipation, exclusiveLockType);
+		Scheduler2PL s2PL = new Scheduler2PL(iB);
+		OutputBean oB = s2PL.check();
+		assertTrue(this.getAssertion(oB, false, schedule, outputSchedule, dataActionProjection, emptySerialSchedule));
+	}
+	
+	@Test
 	public void checkDeadlockNoAnticipationExclusive() throws InputBeanException, InternalErrorException {
 		String schedule = "w1(x) w2(y) w2(x) w1(y)";
 		String outputSchedule = "l1(x) w1(x) l2(y) w2(y)";
