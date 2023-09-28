@@ -177,7 +177,7 @@ public class Scheduler2PL {
 		this.blockedOperations.popOperationByTransaction(transaction);
 	}
 
-	private void unlockObjects(String operation) throws DeadlockException, InternalErrorException {
+	private void unlockObjects(String operation) {
 		if(OperationUtils.isCommit(operation)) {
 			// nothing to unlock
 			return;
@@ -205,7 +205,7 @@ public class Scheduler2PL {
 					return;
 				}
 				this.requiredUnlocks.get(waitForTransaction).remove(object);
-			} catch (TransactionBlockedException e) {}
+			} catch (TransactionBlockedException | DeadlockException | InternalErrorException e) {}
 			logger.log(Level.INFO, String.format("Object %s unlocked", object));
 		}
 	}
