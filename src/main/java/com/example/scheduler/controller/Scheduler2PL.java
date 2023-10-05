@@ -34,7 +34,6 @@ public class Scheduler2PL {
 	// Internal computation
 	List<String> remainingSchedule;
 	HashMap<String, Boolean> isShrinkingPhase;
-	HashMap<String, Integer> countOperations; // index of the last executed operation for each transaction
 	Integer countOperationsSchedule;	// index of the last executed operation in the schedule
 	HashMap<String, SimpleEntry<List<String>, String>> lockTable;
 	HashMap<String, List<String>> requiredUnlocks;
@@ -75,11 +74,9 @@ public class Scheduler2PL {
 		}
 		
 		// Initialize the counter and the shrinking phase for each transaction
-		this.countOperations = new HashMap<String, Integer>();
 		this.isShrinkingPhase = new HashMap<String, Boolean>();
 		this.requiredUnlocks = new HashMap<String, List<String>>();
 		for(String transaction: this.transactions.keySet()) {
-			this.countOperations.put(transaction, 0);
 			this.isShrinkingPhase.put(transaction, false);
 			this.requiredUnlocks.put(transaction, new ArrayList<String>());
 		}
@@ -161,7 +158,6 @@ public class Scheduler2PL {
 			this.execute(operation);
 			
 			// update data structures
-			this.incrementExecutedOperation(operation);
 			this.incrementScheduleCounter(areBlockedOperations);
 			
 			// unlock the object if possible
@@ -181,6 +177,7 @@ public class Scheduler2PL {
 	}
 
 	private void unlockObjects(String operation) {
+		logger.log(Level.INFO, String.format("Trying to unlock all the object"));
 		if(OperationUtils.isCommit(operation)) {
 			// nothing to unlock
 			return;
@@ -193,7 +190,7 @@ public class Scheduler2PL {
 		objectsToUnlock.add(objectOperation); // insert at the first position the operation object
 		objectsToUnlock.addAll(this.requiredUnlocks.get(waitForTransaction));;
 		objectsToUnlock.remove(objectsToUnlock.lastIndexOf(objectOperation)); // remove the duplicate object
-		logger.log(Level.INFO, String.format("Objects to unlock %s", objectsToUnlock));
+		logger.log(Level.INFO, String.format("-Objects to unlock %s", objectsToUnlock));
 		for(String object: objectsToUnlock) {
 			UnableToUnlockExceptionCallback callback = new UnableToUnlockExceptionCallback() {
 				@Override
@@ -209,7 +206,7 @@ public class Scheduler2PL {
 				}
 				this.requiredUnlocks.get(waitForTransaction).remove(object);
 			} catch (TransactionBlockedException | DeadlockException | InternalErrorException e) {}
-			logger.log(Level.INFO, String.format("Object %s unlocked", object));
+			logger.log(Level.INFO, String.format("-Object %s unlocked", object));
 		}
 	}
 	
@@ -269,16 +266,9 @@ public class Scheduler2PL {
 		}
 		return false;
 	}
-
-	private void incrementExecutedOperation(String operation) {
-		if(!this.isLockAnticipation) {
-			String transaction = OperationUtils.getTransactionNumber(operation);
-			this.countOperations.put(transaction, this.countOperations.get(transaction) + 1);
-		}
-	}
 	
 	private void incrementScheduleCounter(Boolean areBlockedOperations) {
-		if(this.isLockAnticipation && !areBlockedOperations) {
+		if(!areBlockedOperations) {
 			// blocked operations are already counted
 			this.countOperationsSchedule += 1;
 		}	
@@ -290,11 +280,12 @@ public class Scheduler2PL {
 	
 	private void lock(String operation) 
 			throws TransactionBlockedException, DeadlockException, InternalErrorException {
+		logger.log(Level.INFO, String.format("Trying to lock the object"));
 		String transactionNumber = OperationUtils.getTransactionNumber(operation);
 		
 		// check if the transaction is blocked
 		if(this.blockedOperations.containsTransaction(transactionNumber)) {
-			logger.log(Level.INFO, String.format("Blocked transactions %s", this.blockedOperations.getTransactions()));
+			logger.log(Level.INFO, String.format("-Blocked transactions %s", this.blockedOperations.getTransactions()));
 			this.blockedOperations.append(operation);
 			throw new TransactionBlockedException();
 		}
@@ -343,7 +334,7 @@ public class Scheduler2PL {
 		String objectName = OperationUtils.getObjectName(operation);
 		Boolean isRead = OperationUtils.isRead(operation);
 		Integer objectState = this.getObjectState(transactionNumber, objectName, isRead);
-		logger.log(Level.INFO, String.format("Object state: %d", objectState));
+		logger.log(Level.INFO, String.format("-Object state: %d", objectState));
 		switch(objectState) {
 			case 0:
 				// object already locked by the same transaction
@@ -653,13 +644,20 @@ public class Scheduler2PL {
 	 * @throws TransactionBlockedException 
 	 */
 	private void unlock(String transactionLock, String objectName) throws UnableToUnlockException {
-		logger.log(Level.INFO, String.format("Unlocking %s", objectName));
+		logger.log(Level.INFO, String.format("-Unlocking %s", objectName));
 		
-		List<String> remainingSchedule = this.getRemainingSchedule(transactionLock);
-		logger.log(Level.INFO, String.format("remainingSchedule %s", remainingSchedule));
-
 		RequiredLocksToUnlockObject requiredLocksToUnlock = new RequiredLocksToUnlockObject(
 				transactionLock, objectName, this.isLockShared);
+		
+		// check if the transaction is blocked
+		if(this.blockedOperations.getTransactions().contains(transactionLock)) {
+			logger.log(Level.INFO, String.format("-Unable to unlock the object %s: transaction blocked", objectName));
+			throw new UnableToUnlockException(requiredLocksToUnlock);
+		}
+		
+		List<String> remainingSchedule = this.getRemainingSchedule(transactionLock);
+		logger.log(Level.INFO, String.format("-remainingSchedule %s", remainingSchedule));
+
 		Boolean unlock = true;
 		Boolean isShrinkingPhasePossible = true;
 		HashMap<String, List<String>> objectSubschedule = new HashMap<String, List<String>>();
@@ -719,10 +717,10 @@ public class Scheduler2PL {
 		
 		if(!unlock || !this.isShrinkingPhase.get(transactionLock)) {
 			if(!unlock) {
-				logger.log(Level.INFO, String.format("Unable to unlock the object %s: object must be reaccessed", objectName));
+				logger.log(Level.INFO, String.format("-Unable to unlock the object %s: object must be reaccessed", objectName));
 			} else {
 				logger.log(Level.INFO, 
-						String.format("Unable to unlock the object %s, can't start the shrinking phase. "
+						String.format("-Unable to unlock the object %s, can't start the shrinking phase. "
 								+ "Required locks before starting unlocks: %s", 
 								objectName,
 								requiredLocksToUnlock.getOtherRequiredLocks()));
@@ -737,25 +735,13 @@ public class Scheduler2PL {
 		} else {
 			this.lockTable.get(objectName).getKey().remove(transactionLock);
 		}
-		logger.log(Level.INFO, String.format("Add unlock %s", OperationUtils.createOperation("u", transactionLock, objectName)));
+		logger.log(Level.INFO, String.format("-Add unlock %s", OperationUtils.createOperation("u", transactionLock, objectName)));
 		this.scheduleWithLocks.add(OperationUtils.createOperation("u", transactionLock, objectName));
 		this.requiredUnlocks.get(transactionLock).remove(objectName);
 	}
 
 	private List<String> getRemainingSchedule(String transactionLock) {
-		if(!this.isLockAnticipation) {
-			// transaction remaining operations
-			List<String> operations = this.transactions.get(transactionLock);
-			Integer executedOperations = this.countOperations.get(transactionLock);
-			Integer operationsListLenght = operations.size(); 
-			return operations.subList(executedOperations, operationsListLenght);
-		} else {
-			// schedule remaining operations
-			List<String> remainingSchedule = new ArrayList<String>(this.blockedOperations.getblockedOperationsSchedule());
-			remainingSchedule.addAll(
-					this.schedule.subList(this.countOperationsSchedule, this.schedule.size()));
-			return remainingSchedule;
-		}
+		return this.schedule.subList(this.countOperationsSchedule, this.schedule.size());
 	}		
 
 	private void addLockToFinalSchedule(String operation) {
