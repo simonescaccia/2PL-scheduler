@@ -39,9 +39,8 @@ public class WaitForGraph {
 				waitForTransaction = this.adjacencyList.get(waitForTransaction).getKey();
 				waitForCycle.add(waitForTransaction);
 				if(waitForTransaction.equals(sourceTransaction)) { 
-					throw new DeadlockException(
-							String.format("Deadlock detected, the Wait-For-Graph contains the following cycle %s", 
-							this.formatCycle(waitForCycle)));
+					throw new DeadlockException( 
+							this.formatCycle(waitForCycle));
 				}
 			} else {
 				waitForTransaction = null;
@@ -49,7 +48,7 @@ public class WaitForGraph {
 		}
 	}
 
-	private Object formatCycle(List<String> waitForCycle) {
+	private String formatCycle(List<String> waitForCycle) {
 		return "T" + String.join(" T", waitForCycle);
 	}
 

@@ -14,6 +14,7 @@ public class OutputBean {
 	List<String> log;					// Description of the computation
 	Boolean result;						// Define if the schedule follows the 2PL protocol
 	Boolean check2PL;
+	String deadlockCycle;
 	
 	HashMap<String, String> transactionsWithLocks = new HashMap<String, String>();
 	HashMap<String, String> transactions = new HashMap<String, String>();
@@ -25,11 +26,13 @@ public class OutputBean {
 			Boolean result, 
 			List<String> dataActionProjection, 
 			List<String> topologicalOrder, 
-			Boolean check2PL) 
+			Boolean check2PL, 
+			String deadlockCycle) 
 					throws InternalErrorException {
 		this.log = log;
 		this.result = result;
 		this.check2PL = check2PL;
+		this.deadlockCycle = deadlockCycle;
 		this.setTransactionsWithLocks(scheduleWithLocks);
 		this.setTransactions(schedule);
 		this.formatScheduleWithLocks(scheduleWithLocks);
@@ -63,6 +66,10 @@ public class OutputBean {
 
 	public String getTopologicalOrder() {
 		return this.topologicalOrder;
+	}
+	 
+	public String getDeadlockCycle() {
+		return this.deadlockCycle;
 	}
 	
 	private void formatScheduleWithLocks(List<String> scheduleWithLocks) {

@@ -47,6 +47,7 @@ public class Scheduler2PL {
 	List<String> dataActionProjection;
 	List<String> scheduleWithLocks;
 	List<String> log;
+	String deadlockCycle;
 	Boolean result;
 	
 	public Scheduler2PL(InputBean iB) {
@@ -93,6 +94,7 @@ public class Scheduler2PL {
 		this.dataActionProjection = new ArrayList<String>();
 		this.topologicalOrder = new ArrayList<String>();
 		this.check2PL = true;
+		this.deadlockCycle = "";
 	}
 	
 	public OutputBean check() throws InternalErrorException {
@@ -120,7 +122,8 @@ public class Scheduler2PL {
 				this.result,
 				this.dataActionProjection,
 				this.topologicalOrder,
-				this.check2PL);
+				this.check2PL,
+				this.deadlockCycle);
 		return oB;
 	}
 
@@ -395,12 +398,7 @@ public class Scheduler2PL {
 						requiredLocksToUnlockObject.getTransactionToUnlock(), 
 						requiredLocksToUnlockObject.getObjectToUnlock());
 			} catch (DeadlockException e) {
-				this.log.add(
-						String.format("Deadlock detected, caused by transaction %s on transaction %s",
-								OperationUtils.getTransactionNumber(operation),
-								requiredLocksToUnlockObject.getTransactionToUnlock()
-						));
-				throw new DeadlockException();
+				this.deadlockDetected(e);
 			}
 			
 			for(String object: operationsToLockByObject.keySet()) {				
@@ -411,6 +409,15 @@ public class Scheduler2PL {
 			// locks completed, then remove wait for graph
 			this.waitForGraph.removeEdge(operation);
 		}
+	}
+
+	private void deadlockDetected(DeadlockException e) throws DeadlockException{
+		this.log.add(
+				String.format("Deadlock detected, caused by transaction %s, the Wait-For-Graph contains the following cycle %s", 
+						e.getMessage().split(" ")[e.getMessage().split(" ").length-1],
+						e.getMessage()));
+		this.deadlockCycle = e.getMessage();
+		throw new DeadlockException();
 	}
 
 	private HashMap<String, String> checkLockAnticipation(String lockOperation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
@@ -632,8 +639,7 @@ public class Scheduler2PL {
 		try {
 			this.waitForGraph.addEdge(transactionNumber, transactionLock, objectName); // transaction is blocked
 		} catch (DeadlockException e) {
-			this.log.add(e.getMessage());
-			throw new DeadlockException();
+			this.deadlockDetected(e);
 		}	
 	
 		throw new TransactionBlockedException();
