@@ -39,7 +39,7 @@ public class Scheduler2PL {
 	HashMap<String, List<String>> requiredUnlocks;
 	WaitForGraph waitForGraph;
 	BlockedOperations blockedOperations;	// For each blocked transaction store the operations to execute after unblocking
-	Boolean check2PL; // execute checks when filling the outputBean. Should be false if the schedule is not completed due to deadlocks 
+	Boolean isDeadlock; // execute checks when filling the outputBean. Should be false if the schedule is not completed due to deadlocks 
 	
 	// Output
 	List<String> topologicalOrder;
@@ -90,7 +90,7 @@ public class Scheduler2PL {
 		this.remainingSchedule = new ArrayList<String>(this.schedule);
 		this.dataActionProjection = new ArrayList<String>();
 		this.topologicalOrder = new ArrayList<String>();
-		this.check2PL = true;
+		this.isDeadlock = false;
 		this.deadlockCycle = "";
 	}
 	
@@ -100,7 +100,7 @@ public class Scheduler2PL {
 			this.computeLockExtendedSchedule(this.schedule, false);
 		} catch (DeadlockException e) {
 			this.result = false;
-			this.check2PL = false;
+			this.isDeadlock = true;
 		}
 		
 		// compute DT(S)
@@ -119,7 +119,7 @@ public class Scheduler2PL {
 				this.result,
 				this.dataActionProjection,
 				this.topologicalOrder,
-				this.check2PL,
+				this.isDeadlock,
 				this.deadlockCycle);
 		return oB;
 	}
@@ -138,6 +138,7 @@ public class Scheduler2PL {
 		for(String operation: schedule) {
 			logger.log(Level.INFO, String.format(""));
 			logger.log(Level.INFO, String.format("Trying to execute %s", operation));
+			logger.log(Level.INFO, String.format("Remaining schedule %s", this.remainingSchedule));
 
 			// remove from blocked operation if the schedule contains blocked operations
 			this.popBlockedOperation(operation, areBlockedOperations);
@@ -149,16 +150,14 @@ public class Scheduler2PL {
 			} catch (TransactionBlockedException e) {
 				// if an operation is blocked we can't execute them
 				logger.log(Level.INFO, "Unable to lock, transaction blocked");
-				this.incrementScheduleCounter(areBlockedOperations);
 				continue;
 			} catch (DeadlockException e) {
 				logger.log(Level.INFO, "Deadlock");
 				throw new DeadlockException();
+			} finally {
+				this.removeFirstOperationFromRemainingSchedule();
 			}
 			this.execute(operation);
-			
-			// update data structures
-			this.incrementScheduleCounter(areBlockedOperations);
 			
 			// unlock the object if possible
 			this.unlockObjects(operation);
@@ -251,12 +250,20 @@ public class Scheduler2PL {
 					));
 			// unlock done, then remove the transaction form blocked transactions and execute it
 			List<String> blockedOperations = this.blockedOperations.removeBlockedTransaction(blockedTransaction);
+			this.pushToRemainingSchedule(new ArrayList<String>(blockedOperations));
 			this.computeLockExtendedSchedule(blockedOperations, true);
 			// after resuming the first transaction the adjacencyList may changes, then we continue to resume transaction recursively  
 			break;
 		}
 	}
 	
+	private void pushToRemainingSchedule(List<String> blockedOperations) {
+		List<String> newRemainingSchedule = new ArrayList<String>();
+		newRemainingSchedule.addAll(blockedOperations);
+		newRemainingSchedule.addAll(this.remainingSchedule);
+		this.remainingSchedule = newRemainingSchedule;
+	}
+
 	private boolean checkObjectAlreadyUnlocked(String waitForTransaction, String object) {
 		String exclusiveTransactionLock = this.lockTable.get(object).getValue();	// transaction who has the exclusive lock
 		List<String> sharedTransactionsLock = this.lockTable.get(object).getKey();	// transaction who has the exclusive lock
@@ -267,11 +274,11 @@ public class Scheduler2PL {
 		return false;
 	}
 	
-	private void incrementScheduleCounter(Boolean areBlockedOperations) {
-		if(!areBlockedOperations) {
-			// blocked operations are already counted
-			this.countOperationsSchedule += 1;
-		}	
+	private void removeFirstOperationFromRemainingSchedule() {
+		if(this.remainingSchedule.size() == 0) {
+			return;
+		}
+		this.remainingSchedule.remove(0);
 	}
 
 	private void execute(String operation) {
@@ -307,21 +314,24 @@ public class Scheduler2PL {
 			public void run(RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
 					throws TransactionBlockedException, DeadlockException, InternalErrorException {
 				// can't unlock the object
-				if(!Scheduler2PL.this.isLockAnticipation) {
+				if(!Scheduler2PL.this.isLockAnticipation ||
+					Scheduler2PL.this.blockedOperations.containsTransaction(
+								requiredLocksToUnlockObject.getTransactionToUnlock())) {
 					Scheduler2PL.this.blockTransaction(
 							this.operation,
 							this.transactionLock);
 				} else {
+					// use lock anticipation
 					try {
-					Scheduler2PL.this.anticipateLocks(
-							this.operation,
-							requiredLocksToUnlockObject);
-					
-					// anticipation lock done, then unlock the object
-					Scheduler2PL.this.unlockSetExceptionCallback(
-							this.transactionLock, 
-							requiredLocksToUnlockObject.getObjectToUnlock(), 
-							internalErrorCallback);
+						Scheduler2PL.this.anticipateLocks(
+								this.operation,
+								requiredLocksToUnlockObject);
+						
+						// anticipation lock done, then unlock the object
+						Scheduler2PL.this.unlockSetExceptionCallback(
+								this.transactionLock, 
+								requiredLocksToUnlockObject.getObjectToUnlock(), 
+								internalErrorCallback);
 					} catch (LockAnticipationException e) {
 						Scheduler2PL.this.blockTransaction(
 								this.operation,
@@ -363,42 +373,39 @@ public class Scheduler2PL {
 				throw new InternalErrorException("Internal error: locking situation not managed");
 		}
 	}
-	
-	private void anticipateLocks(String operation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) 
-			throws TransactionBlockedException, LockAnticipationException, InternalErrorException, DeadlockException {
+
+	private void anticipateLocks(String operation, RequiredLocksToUnlockObject requiredLocksToUnlockObject) throws 
+	TransactionBlockedException, DeadlockException, LockAnticipationException, InternalErrorException {
 		// check if lock anticipation is possible
 		if(!requiredLocksToUnlockObject.getIsLastUsage()) {
+			// object must be reused
 			String lockOperation = requiredLocksToUnlockObject.getOtherUsageOperations().get(0);
 			this.blockTransaction(operation, OperationUtils.getTransactionNumber(lockOperation));
 		} else {		
 			// check if lock anticipation is possible, so there is no operation that requires a lock on the same object before 
 			HashMap<String, String> operationsToLockByObject = this.checkLockAnticipation(operation, requiredLocksToUnlockObject);
-
-			for(String object: operationsToLockByObject.keySet()) {				
+			
+			for(String object: operationsToLockByObject.keySet()) {
 				// anticipate lock
 				this.log.add(String.format("During locking %s and unlocking %s, anticipate lock for %s",
 						operation,
 						requiredLocksToUnlockObject.getObjectToUnlock(),
 						operationsToLockByObject.get(object)));
-			}
-			
-			// add a wait for edge to recognize possible deadlocks
-			try {
-				this.waitForGraph.addEdge(
-						OperationUtils.getTransactionNumber(operation), 
-						requiredLocksToUnlockObject.getTransactionToUnlock(), 
-						requiredLocksToUnlockObject.getObjectToUnlock());
-			} catch (DeadlockException e) {
-				this.deadlockDetected(e);
-			}
-			
-			for(String object: operationsToLockByObject.keySet()) {				
-				// anticipate lock
+
+				// add a wait for edge to recognize possible deadlocks
+				try {
+					this.waitForGraph.addEdge(
+							OperationUtils.getTransactionNumber(operation), 
+							requiredLocksToUnlockObject.getTransactionToUnlock(), 
+							requiredLocksToUnlockObject.getObjectToUnlock());
+				} catch (DeadlockException dE) {
+					this.deadlockDetected(dE);
+				}
+				
 				this.lock(operationsToLockByObject.get(object));
+				// lock completed, remove wait for edge
+				this.waitForGraph.removeEdge(OperationUtils.getTransactionNumber(operation));
 			}
-			
-			// locks completed, then remove wait for graph
-			this.waitForGraph.removeEdge(operation);
 		}
 	}
 
@@ -741,7 +748,7 @@ public class Scheduler2PL {
 	}
 
 	private List<String> getRemainingSchedule(String transactionLock) {
-		return this.schedule.subList(this.countOperationsSchedule, this.schedule.size());
+		return this.remainingSchedule;
 	}		
 
 	private void addLockToFinalSchedule(String operation) {

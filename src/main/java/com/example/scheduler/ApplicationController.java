@@ -59,6 +59,7 @@ public class ApplicationController {
 				model.addAttribute("scheduleWithLocks", oB.getSchedleWithLocks());
 				model.addAttribute("log", oB.getLog());
 				model.addAttribute("result2PL", oB.getResult());
+				model.addAttribute("isDeadlock", oB.getIsDeadlock());
 				model.addAttribute("transactionsWithLocks", oB.getTransactionsWithLocks());
 				model.addAttribute("dataActionProjection", oB.getDataActionProjection());
 				model.addAttribute("topologicalOrder", oB.getTopologicalOrder());

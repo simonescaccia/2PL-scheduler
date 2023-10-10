@@ -108,8 +108,10 @@
 					</td>
 				</tr>
 			</table>
-			<div th:if="${result2PL == true}">
+			<div th:if="${isDeadlock == false}">
 				<p th:text="'DT(S): ' + ${dataActionProjection}" />
+			</div>
+			<div th:if="${result2PL == true}">
 				<p th:text="'Serial schedule: ' + ${topologicalOrder}" />
 			</div>
 			<table>
