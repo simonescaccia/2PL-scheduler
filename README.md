@@ -1,6 +1,6 @@
 # 2PL-scheduler
 
-This application aims to implement a Two-Phase Locking (2PL) scheduler for the Data Management project. It is built using Spring Boot and Maven for the backend, Thymeleaf for the front-end, and Docker for containerization.<## Application description
+This application aims to implement a Two-Phase Locking (2PL) scheduler for the Data Management project. It is built using Spring Boot and Maven for the backend, Thymeleaf for the front-end, and Docker for containerization.
 
 ## How to run
 
