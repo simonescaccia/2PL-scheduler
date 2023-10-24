@@ -12,7 +12,7 @@ After downloading the project, start the Docker daemon (e.g. Docker Desktop on W
 
 ### Without Docker
 
-You can run the Spring Boot application using your IDE like Eclipse.
+You can run the Spring Boot application using your IDE like Eclipse. Right-click on the project, then select "Run As" > "Spring Boot App".
 
 ## Web interface
 
