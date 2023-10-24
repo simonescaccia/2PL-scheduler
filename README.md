@@ -2,12 +2,18 @@
 
 This application aims to implement a Two-Phase Locking (2PL) scheduler for the Data Management project. It is built using Spring Boot and Maven for the backend, Thymeleaf for the front-end, and Docker for containerization.
 
-## How to run
+## How to run the application
 
-Run the following command into the project directory to build the application using docker-compose:
+### Using Docker
 
-```docker-compose up --build```
+After downloading the project, start the Docker daemon (e.g. Docker Desktop on Windows) and run the following command into the root project directory to build the application using docker-compose:
 
-Or you can run the Spring Boot application using your IDE.
+```docker-compose up```
 
-Using a browser you can see the local web interface at http://localhost:8080/
+### Without Docker
+
+You can run the Spring Boot application using your IDE like Eclipse.
+
+## Web interface
+
+The web interface is accessible at the following address: http://localhost:8080/
