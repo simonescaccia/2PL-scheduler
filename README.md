@@ -8,11 +8,11 @@ This application aims to implement a Two-Phase Locking (2PL) scheduler for the D
 
 After downloading the project, start the Docker daemon (e.g. Docker Desktop on Windows) and run the following command into the root project directory to build the application using docker-compose:
 
-```docker-compose up```
+```docker compose up```
 
 ### Without Docker
 
-You can run the Spring Boot application using your IDE like Eclipse. Right-click on the project, then select "Run As" > "Spring Boot App".
+You can run the Spring Boot application using your IDE like Eclipse. Import the project, right-click on the project, then select "Run As" > "Spring Boot App".
 
 ## Web interface
 
